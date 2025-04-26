@@ -197,16 +197,12 @@ namespace DameChanceSV2.DAL
         // Elimina un usuario por su Id
         public void DeleteUsuario(int userId)
         {
-            using (SqlConnection conn = _database.GetConnection())
-            {
-                string query = "DELETE FROM Usuarios WHERE Id = @Id";
-                using (SqlCommand cmd = new SqlCommand(query, conn))
-                {
-                    cmd.Parameters.AddWithValue("@Id", userId);
-                    conn.Open();
-                    cmd.ExecuteNonQuery();
-                }
-            }
+            using var conn = _database.GetConnection();
+            const string sql = "DELETE FROM Usuarios WHERE Id = @Id";
+            using var cmd = new SqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@Id", userId);
+            conn.Open();
+            cmd.ExecuteNonQuery();
         }
 
         // Obtiene contadores generales para el bloque 2

@@ -1,4 +1,5 @@
 ﻿@model DameChanceSV2.Models.CompletarPerfilViewModel
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
 
 @{
     ViewData["Title"] = "Completa tu Perfil";
@@ -39,16 +40,36 @@
 
             <!-- Ubicación -->
             <div class="mb-3">
-                <label asp-for="Ubicacion" class="form-label"><i class="bi bi-geo-alt-fill me-1"></i> Ubicación</label>
-                <input asp-for="Ubicacion" class="form-control input-custom" type="text" placeholder="Ej: San Salvador, El Salvador" />
+                <label asp-for="Ubicacion" class="form-label">
+                    <i class="bi bi-geo-alt-fill me-1"></i> Ubicación
+                </label>
+                <!-- Campo visible para autocompletar -->
+                <input id="autocomplete" class="form-control input-custom" type="text"
+                       placeholder="Busca tu ubicación" />
+                <!-- Campo oculto para enviar la dirección a la acción POST -->
+                <input asp-for="Ubicacion" id="Ubicacion" type="hidden" />
                 <span asp-validation-for="Ubicacion" class="text-danger small"></span>
+                <!-- Contenedor del mapa -->
+                <div id="map" style="height:300px; margin-top:10px;"></div>
             </div>
 
             <!-- Imagen de Perfil -->
             <div class="mb-4">
-                <label asp-for="ImagenPerfil" class="form-label"><i class="bi bi-image me-1"></i> Foto de Perfil</label>
-                <input asp-for="ImagenPerfil" class="form-control input-custom" type="file" accept="image/*" />
+                <label asp-for="ImagenPerfil" class="form-label">
+                    <i class="bi bi-image me-1"></i> Foto de Perfil
+                </label>
+                <input asp-for="ImagenPerfil"
+                       id="ImagenPerfil"
+                       class="form-control input-custom"
+                       type="file"
+                       accept=".jpg,.jpeg,.png" />
                 <span asp-validation-for="ImagenPerfil" class="text-danger small"></span>
+
+                <!-- Vista previa -->
+                <img id="preview-img"
+                     class="img-fluid mt-2 rounded"
+                     style="max-height:200px; display:none;"
+                     alt="Vista previa de la imagen" />
             </div>
 
             <div class="d-grid">
@@ -62,4 +83,57 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+
+    <!-- Carga de la API de Google Maps Places -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=@Configuration["GoogleMaps:ApiKey"]&libraries=places">
+    </script>
+
+    <script>
+        function initAutocomplete() {
+          // Inicializamos Autocomplete ligado al input
+          const autocomplete = new google.maps.places.Autocomplete(
+            document.getElementById('autocomplete'),
+            { types: ['geocode'] }
+          );
+
+          // Creamos mapa y marcador
+          const map = new google.maps.Map(
+            document.getElementById('map'),
+            { center: { lat: 0, lng: 0 }, zoom: 2 }
+          );
+          const marker = new google.maps.Marker({ map: map });
+
+          // Cuando el usuario selecciona un lugar…
+          autocomplete.addListener('place_changed', () => {
+            const place = autocomplete.getPlace();
+            if (!place.geometry) return;
+
+            // Centrar y hacer zoom en el mapa
+            map.setCenter(place.geometry.location);
+            map.setZoom(15);
+            marker.setPosition(place.geometry.location);
+
+            // Guardar la dirección formateada en el campo oculto
+            document.getElementById('Ubicacion').value = place.formatted_address;
+          });
+        }
+
+        // Código para vista previa de imagen
+        initAutocomplete();
+
+                document.getElementById("ImagenPerfil").addEventListener("change", e => {
+          const [file] = e.target.files;
+          const preview = document.getElementById("preview-img");
+          if (file) {
+            preview.src = URL.createObjectURL(file);
+            preview.style.display = "block";
+          } else {
+            preview.src = "";
+            preview.style.display = "none";
+          }
+        });
+
+    </script>
+
+
 }

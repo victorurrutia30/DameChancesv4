@@ -27,15 +27,15 @@
                     <div class="col">
                         <div class="match-card h-100 shadow-sm">
                             <img src="@(string.IsNullOrEmpty(p.ImagenPerfil)
-                                         ? "https://via.placeholder.com/300x200.png?text=Sin+foto"
-                                         : Url.Content($"~/images/perfiles/{p.ImagenPerfil}"))"
+             ? "https://via.placeholder.com/300x200.png?text=Sin+foto"
+             : Url.Content($"~/{p.ImagenPerfil}"))"
                                  class="card-img-top rounded-top" alt="@p.Nombre">
                             <div class="card-body d-flex flex-column">
                                 <h5 class="card-title">@p.Nombre</h5>
                                 <p class="card-text mb-1"><strong>Edad:</strong> @p.Edad</p>
                                 <p class="card-text mb-1"><strong>Género:</strong> @p.Genero</p>
                                 <p class="card-text"><strong>Intereses:</strong> @p.Intereses</p>
-
+                                <p class="card-text mb-3"><strong>Ubicación:</strong> @p.Ubicacion</p>
                                 <form asp-controller="Matches" asp-action="Like" method="post" class="mt-auto">
                                     @Html.AntiForgeryToken()
                                     <input type="hidden" name="targetId" value="@p.UsuarioId" />

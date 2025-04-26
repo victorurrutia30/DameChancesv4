@@ -1,6 +1,80 @@
-﻿namespace DameChanceSV2.DAL
+﻿using DameChanceSV2.Models;
+using Microsoft.Data.SqlClient;
+
+namespace DameChanceSV2.DAL
 {
     public class MensajeDAL
     {
+        private readonly Database _database;
+        public MensajeDAL(Database database) => _database = database;
+
+        public List<Mensaje> GetMensajesByMatch(int matchId)
+        {
+            var lista = new List<Mensaje>();
+            using var conn = _database.GetConnection();
+            const string sql = @"
+                SELECT Id, MatchId, EmisorId, ReceptorId, Contenido, FechaEnvio, Leido
+                  FROM Mensajes
+                 WHERE MatchId = @m
+              ORDER BY FechaEnvio";
+            using var cmd = new SqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@m", matchId);
+            conn.Open();
+            using var rd = cmd.ExecuteReader();
+            while (rd.Read())
+            {
+                lista.Add(new Mensaje
+                {
+                    Id = rd.GetInt32(0),
+                    MatchId = rd.GetInt32(1),
+                    EmisorId = rd.GetInt32(2),
+                    ReceptorId = rd.GetInt32(3),
+                    Contenido = rd.GetString(4),
+                    FechaEnvio = rd.GetDateTime(5),
+                    Leido = rd.GetBoolean(6)
+                });
+            }
+            return lista;
+        }
+
+        public void InsertMensaje(Mensaje msg)
+        {
+            using var conn = _database.GetConnection();
+            const string sql = @"
+                INSERT INTO Mensajes (MatchId, EmisorId, ReceptorId, Contenido)
+                VALUES (@mid, @e, @r, @c)";
+            using var cmd = new SqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@mid", msg.MatchId);
+            cmd.Parameters.AddWithValue("@e", msg.EmisorId);
+            cmd.Parameters.AddWithValue("@r", msg.ReceptorId);
+            cmd.Parameters.AddWithValue("@c", msg.Contenido);
+            conn.Open();
+            cmd.ExecuteNonQuery();
+        }
+
+        public void MarcarComoLeido(int mensajeId)
+        {
+            using var conn = _database.GetConnection();
+            const string sql = "UPDATE Mensajes SET Leido = 1 WHERE Id = @id";
+            using var cmd = new SqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@id", mensajeId);
+            conn.Open();
+            cmd.ExecuteNonQuery();
+        }
+
+        public int ContarNoLeidos(int usuarioId, int matchId)
+        {
+            using var conn = _database.GetConnection();
+            const string sql = @"
+                SELECT COUNT(*) FROM Mensajes
+                 WHERE MatchId = @m
+                   AND ReceptorId = @u
+                   AND Leido = 0";
+            using var cmd = new SqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@m", matchId);
+            cmd.Parameters.AddWithValue("@u", usuarioId);
+            conn.Open();
+            return (int)cmd.ExecuteScalar();
+        }
     }
 }

@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Data;
 using Microsoft.Data.SqlClient;
 using DameChanceSV2.Models;
 
@@ -39,14 +38,14 @@ namespace DameChanceSV2.DAL
             return (int)cmd.ExecuteScalar() > 0;
         }
 
-        //si el like ya existe
+        // Si el like ya existe
         public bool ExistsLike(int usuarioId, int targetId)
         {
             using var conn = _database.GetConnection();
             const string sql = @"
-      SELECT COUNT(*) 
-      FROM Matches 
-      WHERE Usuario1Id = @u1 AND Usuario2Id = @u2";
+                SELECT COUNT(*) 
+                FROM Matches 
+                WHERE Usuario1Id = @u1 AND Usuario2Id = @u2";
             using var cmd = new SqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@u1", usuarioId);
             cmd.Parameters.AddWithValue("@u2", targetId);
@@ -84,6 +83,31 @@ namespace DameChanceSV2.DAL
                 });
             }
             return list;
+        }
+
+        // Permite cargar un objeto Match por su Id.
+        public Match? GetMatchById(int matchId)
+        {
+            using var conn = _database.GetConnection();
+            const string sql = @"
+                SELECT Id, Usuario1Id, Usuario2Id, FechaMatch
+                FROM Matches
+                WHERE Id = @id";
+            using var cmd = new SqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@id", matchId);
+            conn.Open();
+            using var rd = cmd.ExecuteReader();
+            if (rd.Read())
+            {
+                return new Match
+                {
+                    Id = rd.GetInt32(0),
+                    Usuario1Id = rd.GetInt32(1),
+                    Usuario2Id = rd.GetInt32(2),
+                    FechaMatch = rd.GetDateTime(3)
+                };
+            }
+            return null;
         }
     }
 }

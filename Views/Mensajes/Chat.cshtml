@@ -1,5 +1,37 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
+﻿@model List<DameChanceSV2.Models.Mensaje>
 @{
+    ViewData["Title"] = "Chat 1-a-1";
+    var match = (DameChanceSV2.Models.Match)ViewBag.Match;
+    int noLeidos = (int)ViewBag.NoLeidos;
+    int yo = int.Parse(Context.Request.Cookies["UserSession"]);
 }
+
+<h2>
+    Chat con @(match.Usuario1Id == yo ? match.Usuario2Id : match.Usuario1Id)
+    @if (noLeidos > 0)
+    {
+        <span class="badge bg-danger">¡@noLeidos nuevos!</span>
+    }
+</h2>
+
+<div class="chat-window mb-4" style="max-height:400px; overflow-y:auto;">
+    @foreach (var m in Model)
+    {
+        var esMio = m.EmisorId == yo;
+        <div class="d-flex @(esMio? "justify-content-end":"") mb-2">
+            <div class="p-2 rounded @(esMio? "bg-primary text-white":"bg-light")">
+                <small>@m.FechaEnvio.ToString("g")</small><br />
+                @m.Contenido
+            </div>
+        </div>
+    }
+</div>
+
+<form asp-action="Enviar" method="post">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="matchId" value="@match.Id" />
+    <div class="input-group">
+        <input type="text" name="contenido" class="form-control" placeholder="Escribe tu mensaje…" required />
+        <button class="btn btn-success" type="submit">Enviar</button>
+    </div>
+</form>

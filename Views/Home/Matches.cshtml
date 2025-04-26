@@ -1,0 +1,24 @@
+﻿@model List<DameChanceSV2.Models.Usuario>
+@{
+    ViewData["Title"] = "Tus Matches";
+}
+
+@if (TempData["MatchMsg"] != null)
+{
+    <div class="alert alert-success">@TempData["MatchMsg"]</div>
+}
+
+<div class="row row-cols-1 row-cols-md-3 g-4">
+    @foreach (var u in Model)
+    {
+        <div class="col">
+            <div class="card shadow-sm text-center">
+                <div class="card-body">
+                    <h5 class="card-title">@u.Nombre</h5>
+                    <p class="card-text">@u.Correo</p>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+

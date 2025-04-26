@@ -1,0 +1,46 @@
+﻿@model List<DameChanceSV2.Models.DashboardProfileViewModel>
+@{
+    ViewData["Title"] = "Inicio del Usuario";
+}
+
+<div class="user-dashboard-layout d-flex">
+    <aside class="user-sidebar d-none d-md-block">…</aside>
+    <main class="user-main-content flex-grow-1">
+        <section class="user-welcome-banner">…</section>
+
+        <div class="container mb-5">
+            <h2 class="mb-4 text-center">Personas que podrían interesarte</h2>
+            <div class="row row-cols-1 row-cols-md-3 g-4">
+                @foreach (var p in Model)
+                {
+                    <div class="col">
+                        <div class="match-card h-100 shadow-sm">
+                            <img src="@(string.IsNullOrEmpty(p.ImagenPerfil)
+                                         ? "https://via.placeholder.com/300x200.png?text=Sin+foto"
+                                         : Url.Content($"~/images/perfiles/{p.ImagenPerfil}"))"
+                                 class="card-img-top rounded-top" alt="@p.Nombre">
+                            <div class="card-body d-flex flex-column">
+                                <h5 class="card-title">@p.Nombre</h5>
+                                <p class="card-text mb-1"><strong>Edad:</strong> @p.Edad</p>
+                                <p class="card-text mb-1"><strong>Género:</strong> @p.Genero</p>
+                                <p class="card-text"><strong>Intereses:</strong> @p.Intereses</p>
+
+                                <form asp-controller="Matches" asp-action="Like" method="post" class="mt-auto">
+                                    <input type="hidden" name="targetId" value="@p.UsuarioId" />
+                                    <button type="submit" class="btn btn-match w-100">
+                                        <i class="bi bi-heart-fill me-1"></i> Me interesa
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="user-explore-more text-center p-4">
+            <h3 class="mb-3">¿No encontraste a tu persona ideal?</h3>
+            <p>¡Explora más perfiles y descubre quién te puede sorprender!</p>
+        </div>
+    </main>
+</div>

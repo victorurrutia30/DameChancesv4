@@ -1,24 +1,40 @@
-﻿@model List<DameChanceSV2.Models.Usuario>
+﻿@model List<DameChanceSV2.Models.ConversationViewModel>
 @{
     ViewData["Title"] = "Conversaciones";
-    var matchMap = (Dictionary<int, int>)ViewBag.MatchMap;
-    var unreadMap = (Dictionary<int, int>)ViewBag.UnreadMap;
 }
 
-<h2>Mensajes</h2>
-<ul class="list-group">
-    @foreach (var u in Model)
+<h2 class="mb-4">Tus Conversaciones</h2>
+
+<div class="row row-cols-1 row-cols-md-3 g-4">
+    @foreach (var c in Model)
     {
-        <li class="list-group-item d-flex justify-content-between align-items-center">
-            <a asp-controller="Mensajes"
-               asp-action="Chat"
-               asp-route-matchId="@matchMap[u.Id]">
-                Chat con @u.Nombre
-            </a>
-            @if (unreadMap[u.Id] > 0)
-            {
-                <span class="badge bg-danger">@unreadMap[u.Id] nuevos</span>
-            }
-        </li>
+        <div class="col">
+            <div class="conversation-card shadow-sm">
+                <img src="@(string.IsNullOrEmpty(c.ImagenPerfil)
+                        ? Url.Content("~/images/perfiles/placeholder.png")
+                        : Url.Content($"~/{c.ImagenPerfil}"))"
+                     class="card-img-top rounded-top"
+                     alt="@c.Nombre" />
+
+                <div class="card-body">
+                    <h5 class="card-title">@c.Nombre</h5>
+                    <p class="card-text mb-1">
+                        <strong>No leídos:</strong> @c.UnreadCount
+                    </p>
+                    <p class="card-text text-truncate">
+                        <small class="text-muted">Intereses: @c.Intereses</small>
+                    </p>
+                </div>
+
+                <div class="card-footer bg-transparent border-top-0">
+                    <a asp-controller="Mensajes"
+                       asp-action="Chat"
+                       asp-route-matchId="@c.MatchId"
+                       class="btn btn-match w-100">
+                        <i class="bi bi-chat-dots me-1"></i> Ver chat
+                    </a>
+                </div>
+            </div>
+        </div>
     }
-</ul>
+</div>

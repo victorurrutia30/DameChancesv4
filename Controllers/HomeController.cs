@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using DameChanceSV2.Models;
 using DameChanceSV2.DAL;
 using DameChanceSV2.Utilities;
+using System.Linq;
+using Microsoft.Extensions.Logging;
 
 namespace DameChanceSV2.Controllers
 {
@@ -11,12 +13,16 @@ namespace DameChanceSV2.Controllers
         private readonly ILogger<HomeController> _logger;
         private readonly UsuarioDAL _usuarioDAL;
         private readonly PerfilDeUsuarioDAL _perfilDal;
+        private readonly MatchesDAL _matchesDAL;      
+        private readonly MensajeDAL _mensajeDal;
 
-        public HomeController(ILogger<HomeController> logger, UsuarioDAL usuarioDAL, PerfilDeUsuarioDAL perfilDal)
+        public HomeController(ILogger<HomeController> logger, UsuarioDAL usuarioDAL, PerfilDeUsuarioDAL perfilDal, MatchesDAL matchesDAL, MensajeDAL mensajeDAL)
         {
             _logger = logger;
             _usuarioDAL = usuarioDAL;
             _perfilDal = perfilDal;
+            _matchesDAL = matchesDAL;      
+            _mensajeDal = mensajeDAL;
         }
 
         public IActionResult Index()
@@ -167,10 +173,41 @@ namespace DameChanceSV2.Controllers
         [HttpGet]
         public IActionResult Dashboard()
         {
+            // Validar sesión
             if (!int.TryParse(Request.Cookies["UserSession"], out int userId))
                 return RedirectToAction("Login", "Account");
 
+            // 1) Perfil usuario actual
+            var perfilUsuario = _perfilDal.GetPerfilByUsuarioId(userId);
+
+            // 2) Determinar ruta de imagen
+            string profileImg = string.IsNullOrEmpty(perfilUsuario?.ImagenPerfil)
+                ? "images/perfiles/placeholder.png"
+                : perfilUsuario.ImagenPerfil;
+            ViewBag.UserProfileImage = profileImg;
+
+            // 3) Traer perfiles para el grid
             var perfiles = _perfilDal.GetAllOtherProfiles(userId);
+
+            // 4) Usuario actual (para el nombre)
+            var usuario = _usuarioDAL.GetUsuarioById(userId);
+
+            // 5) Matches y mensajes nuevos
+            var mutuals = _matchesDAL.GetMatchesForUser(userId);
+            int matchCount = mutuals.Count;
+            int newMsgs = mutuals
+                .Select(u => _matchesDAL.GetConversationMatchId(userId, u.Id))
+                .Sum(matchId => _mensajeDal.ContarNoLeidos(userId, matchId));
+
+            // 6) Pasar datos a la vista
+            ViewBag.UserName = usuario?.Nombre ?? "Usuario";
+            ViewBag.MatchCount = matchCount;
+            ViewBag.NewMsgs = newMsgs;
+
+            return View(perfiles); ViewBag.UserName = usuario?.Nombre ?? "Usuario";
+            ViewBag.MatchCount = matchCount;
+            ViewBag.NewMsgs = newMsgs;
+
             return View(perfiles);
         }
     }

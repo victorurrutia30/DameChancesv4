@@ -1,21 +1,43 @@
-﻿@model List<DameChanceSV2.Models.Usuario>
+﻿@model List<DameChanceSV2.Models.DashboardProfileViewModel>
 @{
     ViewData["Title"] = "Tus Matches";
+    var matchMap = (Dictionary<int, int>)ViewBag.MatchMap;
 }
 
 @if (TempData["MatchMsg"] != null)
 {
-    <div class="alert alert-success">@TempData["MatchMsg"]</div>
+    <div class="alert alert-success mb-4">@TempData["MatchMsg"]</div>
 }
 
 <div class="row row-cols-1 row-cols-md-3 g-4">
-    @foreach (var u in Model)
+    @foreach (var m in Model)
     {
         <div class="col">
-            <div class="card shadow-sm text-center">
+            <div class="match-card shadow-sm">
+                <!-- Foto de perfil -->
+                <img src="@(string.IsNullOrEmpty(m.ImagenPerfil)
+                    ? Url.Content("~/images/perfiles/placeholder.png")
+                    : Url.Content($"~/{m.ImagenPerfil}"))"
+                     class="card-img-top rounded-top"
+                     alt="@m.Nombre" />
+
+                <!-- Info -->
                 <div class="card-body">
-                    <h5 class="card-title">@u.Nombre</h5>
-                    <p class="card-text">@u.Correo</p>
+                    <h5 class="card-title">@m.Nombre</h5>
+                    <p class="card-text mb-1"><strong>Edad:</strong> @m.Edad</p>
+                    <p class="card-text mb-1"><strong>Género:</strong> @m.Genero</p>
+                    <p class="card-text mb-1"><strong>Ubicación:</strong> @m.Ubicacion</p>
+                    <p class="card-text mb-2"><strong>Intereses:</strong> @m.Intereses</p>
+                </div>
+
+                <!-- Botón de acción -->
+                <div class="card-footer bg-transparent border-top-0">
+                    <a asp-controller="Mensajes"
+                       asp-action="Chat"
+                       asp-route-matchId="@matchMap[m.UsuarioId]"
+                       class="btn btn-match w-100">
+                        <i class="bi bi-chat-dots me-1"></i> Enviar mensaje
+                    </a>
                 </div>
             </div>
         </div>

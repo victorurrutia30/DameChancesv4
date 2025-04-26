@@ -9,11 +9,19 @@ namespace DameChanceSV2.Controllers
     {
         private readonly MatchesDAL _matchesDAL;
         private readonly MensajeDAL _mensajeDAL;
+        private readonly PerfilDeUsuarioDAL _perfilDAL;  // <-- nuevo
+        private readonly UsuarioDAL _usuarioDAL;         // <-- nuevo
 
-        public MensajesController(MatchesDAL matchesDAL, MensajeDAL mensajeDAL)
+        public MensajesController(
+            MatchesDAL matchesDAL,
+            MensajeDAL mensajeDAL,
+            PerfilDeUsuarioDAL perfilDAL,
+            UsuarioDAL usuarioDAL)                 // <-- nuevo
         {
             _matchesDAL = matchesDAL;
             _mensajeDAL = mensajeDAL;
+            _perfilDAL = perfilDAL;              // <-- inicialización
+            _usuarioDAL = usuarioDAL;             // <-- inicialización
         }
 
         // GET: /Mensajes/Chat?matchId=5
@@ -23,19 +31,24 @@ namespace DameChanceSV2.Controllers
             if (!int.TryParse(Request.Cookies["UserSession"], out int userId))
                 return RedirectToAction("Login", "Account");
 
-            // valida que el usuario forme parte del match
             var match = _matchesDAL.GetMatchById(matchId);
             if (match == null ||
                 (match.Usuario1Id != userId && match.Usuario2Id != userId))
                 return NotFound();
 
-            // trae todos los mensajes
-            var mensajes = _mensajeDAL.GetMensajesByMatch(matchId);
-            // cuenta los no leídos para mostrar badge
-            var noLeidos = _mensajeDAL.ContarNoLeidos(userId, matchId);
+            // No leídos
+            int noLeidos = _mensajeDAL.ContarNoLeidos(userId, matchId);
+            ViewBag.NoLeidos = noLeidos;
+
+            // Nombre del otro usuario
+            int otherId = match.Usuario1Id == userId
+                          ? match.Usuario2Id
+                          : match.Usuario1Id;
+            var other = _usuarioDAL.GetUsuarioById(otherId);
+            ViewBag.OtherUserName = other?.Nombre ?? "Usuario";
 
             ViewBag.Match = match;
-            ViewBag.NoLeidos = noLeidos;
+            var mensajes = _mensajeDAL.GetMensajesByMatch(matchId);
             return View(mensajes);
         }
 
@@ -68,23 +81,31 @@ namespace DameChanceSV2.Controllers
             if (!int.TryParse(Request.Cookies["UserSession"], out int userId))
                 return RedirectToAction("Login", "Account");
 
-            // 1) Lista de usuarios con match mutuo
+            // 1) Todos los matches mutuos
             var usuarios = _matchesDAL.GetMatchesForUser(userId);
 
-            // 2) Para cada usuario, obtener el mismo conversationId y los no leídos
-            var matchMap = new Dictionary<int, int>();
-            var unreadMap = new Dictionary<int, int>();
-
+            // 2) Construir conversación + conteo no leídos
+            var list = new List<ConversationViewModel>();
             foreach (var u in usuarios)
             {
                 int convoId = _matchesDAL.GetConversationMatchId(userId, u.Id);
-                matchMap[u.Id] = convoId;
-                unreadMap[u.Id] = _mensajeDAL.ContarNoLeidos(userId, convoId);
+                int unread = _mensajeDAL.ContarNoLeidos(userId, convoId);
+                var perfil = _perfilDAL.GetPerfilByUsuarioId(u.Id);
+                list.Add(new ConversationViewModel
+                {
+                    UsuarioId = u.Id,
+                    Nombre = u.Nombre,
+                    Edad = perfil?.Edad ?? 0,
+                    Genero = perfil?.Genero ?? "",
+                    Intereses = perfil?.Intereses ?? "",
+                    Ubicacion = perfil?.Ubicacion ?? "",
+                    ImagenPerfil = perfil?.ImagenPerfil,
+                    MatchId = convoId,
+                    UnreadCount = unread
+                });
             }
 
-            ViewBag.MatchMap = matchMap;
-            ViewBag.UnreadMap = unreadMap;
-            return View(usuarios);
+            return View(list);
         }
     }
 }

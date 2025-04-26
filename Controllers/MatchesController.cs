@@ -3,13 +3,21 @@ using DameChanceSV2.DAL;
 using System;
 using Microsoft.AspNetCore.Http;
 using Azure.Core;
+using DameChanceSV2.Models;
 
 namespace DameChanceSV2.Controllers
 {
     public class MatchesController : Controller
     {
         private readonly MatchesDAL _matchesDAL;
-        public MatchesController(MatchesDAL matchesDAL) => _matchesDAL = matchesDAL;
+        private readonly PerfilDeUsuarioDAL _perfilDeUsuarioDAL; // <-- nuevo campo
+        public MatchesController(
+    MatchesDAL matchesDAL,
+    PerfilDeUsuarioDAL perfilDeUsuarioDAL)    // <-- nuevo parámetro
+        {
+            _matchesDAL = matchesDAL;
+            _perfilDeUsuarioDAL = perfilDeUsuarioDAL; // <-- inicialización
+        }
 
         // GET: /Matches
         [HttpGet]
@@ -19,8 +27,33 @@ namespace DameChanceSV2.Controllers
             if (!int.TryParse(Request.Cookies["UserSession"], out int userId))
                 return RedirectToAction("Login", "Account");
 
-            var matches = _matchesDAL.GetMatchesForUser(userId);
-            return View(matches);
+            // 1) Traer todos los usuarios con match mutuo
+            var usuarios = _matchesDAL.GetMatchesForUser(userId);
+
+            // 2) Mapear user.Id → matchId para el chat
+            var matchMap = new Dictionary<int, int>();
+            foreach (var u in usuarios)
+            {
+                matchMap[u.Id] = _matchesDAL.GetConversationMatchId(userId, u.Id);
+            }
+            ViewBag.MatchMap = matchMap;
+
+            // 3) Convertir a DashboardProfileViewModel para tener foto e intereses
+            var model = usuarios.Select(u => {
+                var perfil = _perfilDeUsuarioDAL.GetPerfilByUsuarioId(u.Id);
+                return new DashboardProfileViewModel
+                {
+                    UsuarioId = u.Id,
+                    Nombre = u.Nombre,
+                    Edad = perfil?.Edad ?? 0,
+                    Genero = perfil?.Genero ?? "",
+                    Intereses = perfil?.Intereses ?? "",
+                    Ubicacion = perfil?.Ubicacion ?? "",
+                    ImagenPerfil = perfil?.ImagenPerfil
+                };
+            }).ToList();
+
+            return View(model);
         }
 
         // POST: /Matches/Like

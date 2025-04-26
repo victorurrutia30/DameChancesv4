@@ -39,6 +39,21 @@ namespace DameChanceSV2.DAL
             return (int)cmd.ExecuteScalar() > 0;
         }
 
+        //si el like ya existe
+        public bool ExistsLike(int usuarioId, int targetId)
+        {
+            using var conn = _database.GetConnection();
+            const string sql = @"
+      SELECT COUNT(*) 
+      FROM Matches 
+      WHERE Usuario1Id = @u1 AND Usuario2Id = @u2";
+            using var cmd = new SqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@u1", usuarioId);
+            cmd.Parameters.AddWithValue("@u2", targetId);
+            conn.Open();
+            return (int)cmd.ExecuteScalar() > 0;
+        }
+
         // Recupera usuarios con likes mutuos
         public List<Usuario> GetMatchesForUser(int usuarioId)
         {

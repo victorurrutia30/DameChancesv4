@@ -25,18 +25,23 @@ namespace DameChanceSV2.Controllers
 
         // POST: /Matches/Like
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public IActionResult Like(int targetId)
         {
             if (!int.TryParse(Request.Cookies["UserSession"], out int userId))
                 return RedirectToAction("Login", "Account");
 
-            // Registrar el like
-            _matchesDAL.InsertLike(userId, targetId);
-
-            // Si ya existía el inverso, es un match
-            if (_matchesDAL.IsReciprocal(userId, targetId))
+            if (!_matchesDAL.ExistsLike(userId, targetId))
             {
-                TempData["MatchMsg"] = "¡Tienes un nuevo match!";
+                _matchesDAL.InsertLike(userId, targetId);
+                if (_matchesDAL.IsReciprocal(userId, targetId))
+                    TempData["MatchMsg"] = "¡Tienes un nuevo match!";
+                else
+                    TempData["MatchMsg"] = "Has marcado “Me interesa” correctamente.";
+            }
+            else
+            {
+                TempData["MatchMsg"] = "Ya habías marcado “Me interesa” a esta persona.";
             }
 
             return RedirectToAction("Dashboard", "Home");

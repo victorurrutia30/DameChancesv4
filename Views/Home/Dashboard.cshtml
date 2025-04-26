@@ -6,6 +6,10 @@
 <div class="user-dashboard-layout d-flex">
     <aside class="user-sidebar d-none d-md-block">…</aside>
     <main class="user-main-content flex-grow-1">
+        @if (TempData["MatchMsg"] != null)
+        {
+            <div class="alert alert-success mb-4">@TempData["MatchMsg"]</div>
+        }
         <section class="user-welcome-banner">…</section>
 
         <div class="container mb-5">
@@ -26,6 +30,7 @@
                                 <p class="card-text"><strong>Intereses:</strong> @p.Intereses</p>
 
                                 <form asp-controller="Matches" asp-action="Like" method="post" class="mt-auto">
+                                    @Html.AntiForgeryToken()
                                     <input type="hidden" name="targetId" value="@p.UsuarioId" />
                                     <button type="submit" class="btn btn-match w-100">
                                         <i class="bi bi-heart-fill me-1"></i> Me interesa

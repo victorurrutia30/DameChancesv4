@@ -6,6 +6,13 @@
 <div class="user-dashboard-layout d-flex">
     <aside class="user-sidebar d-none d-md-block">…</aside>
     <main class="user-main-content flex-grow-1">
+        
+        
+        @if (TempData["ReportMsg"] != null)
+        {
+            <div class="alert alert-warning mb-4">@TempData["ReportMsg"]</div>
+        }
+
         @if (TempData["MatchMsg"] != null)
         {
             <div class="alert alert-success mb-4">@TempData["MatchMsg"]</div>
@@ -36,6 +43,14 @@
                                         <i class="bi bi-heart-fill me-1"></i> Me interesa
                                     </button>
                                 </form>
+
+                                <form asp-controller="Reportes" asp-action="Reportar" method="get" class="mt-2">
+                                    <input type="hidden" name="idReportado" value="@p.UsuarioId" />
+                                    <button type="submit" class="btn btn-outline-danger w-100">
+                                        <i class="bi bi-flag-fill me-1"></i> Reportar Usuario
+                                    </button>
+                                </form>
+
                             </div>
                         </div>
                     </div>

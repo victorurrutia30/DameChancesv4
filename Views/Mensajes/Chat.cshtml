@@ -14,6 +14,15 @@
     }
 </h2>
 
+<form asp-controller="Reportes" asp-action="Reportar" method="get" class="mb-3">
+    @* Calculamos quién es el usuario opuesto *@
+    <input type="hidden" name="idReportado"
+           value="@(match.Usuario1Id == yo ? match.Usuario2Id : match.Usuario1Id)" />
+    <button type="submit" class="btn btn-sm btn-danger">
+        <i class="bi bi-flag-fill me-1"></i> Reportar Usuario
+    </button>
+</form>
+
 <div class="chat-window mb-4" style="max-height:400px; overflow-y:auto;">
     @foreach (var m in Model)
     {

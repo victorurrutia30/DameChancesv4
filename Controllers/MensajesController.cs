@@ -60,5 +60,31 @@ namespace DameChanceSV2.Controllers
             _mensajeDAL.InsertMensaje(msg);
             return RedirectToAction("Chat", new { matchId });
         }
+
+        // GET: /Mensajes
+        [HttpGet]
+        public IActionResult Index()
+        {
+            if (!int.TryParse(Request.Cookies["UserSession"], out int userId))
+                return RedirectToAction("Login", "Account");
+
+            // 1) Lista de usuarios con match mutuo
+            var usuarios = _matchesDAL.GetMatchesForUser(userId);
+
+            // 2) Para cada usuario, obtener el mismo conversationId y los no leídos
+            var matchMap = new Dictionary<int, int>();
+            var unreadMap = new Dictionary<int, int>();
+
+            foreach (var u in usuarios)
+            {
+                int convoId = _matchesDAL.GetConversationMatchId(userId, u.Id);
+                matchMap[u.Id] = convoId;
+                unreadMap[u.Id] = _mensajeDAL.ContarNoLeidos(userId, convoId);
+            }
+
+            ViewBag.MatchMap = matchMap;
+            ViewBag.UnreadMap = unreadMap;
+            return View(usuarios);
+        }
     }
 }

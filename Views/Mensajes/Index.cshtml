@@ -1,0 +1,24 @@
+﻿@model List<DameChanceSV2.Models.Usuario>
+@{
+    ViewData["Title"] = "Conversaciones";
+    var matchMap = (Dictionary<int, int>)ViewBag.MatchMap;
+    var unreadMap = (Dictionary<int, int>)ViewBag.UnreadMap;
+}
+
+<h2>Mensajes</h2>
+<ul class="list-group">
+    @foreach (var u in Model)
+    {
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            <a asp-controller="Mensajes"
+               asp-action="Chat"
+               asp-route-matchId="@matchMap[u.Id]">
+                Chat con @u.Nombre
+            </a>
+            @if (unreadMap[u.Id] > 0)
+            {
+                <span class="badge bg-danger">@unreadMap[u.Id] nuevos</span>
+            }
+        </li>
+    }
+</ul>

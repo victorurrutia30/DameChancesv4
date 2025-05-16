@@ -87,7 +87,7 @@ namespace DameChanceSV2.Controllers
             return View(model);
         }
 
-        // GET: /Home/EditUser/5
+        // GET: /Home/EditUser/
         [HttpGet]
         public IActionResult EditUser(int id)
         {
@@ -128,7 +128,7 @@ namespace DameChanceSV2.Controllers
             return View(model);
         }
 
-        // GET: /Home/DeleteUser/5
+        // GET: /Home/DeleteUser/
         [HttpGet]
         public IActionResult DeleteUser(int id)
         {
@@ -177,29 +177,26 @@ namespace DameChanceSV2.Controllers
             if (!int.TryParse(Request.Cookies["UserSession"], out int userId))
                 return RedirectToAction("Login", "Account");
 
-            // 1) Perfil usuario actual
+            // Perfil usuario actual
             var perfilUsuario = _perfilDal.GetPerfilByUsuarioId(userId);
 
-            // 2) Determinar ruta de imagen
+            // Determinar ruta de imagen
             string profileImg = string.IsNullOrEmpty(perfilUsuario?.ImagenPerfil)
                 ? "images/perfiles/placeholder.png"
                 : perfilUsuario.ImagenPerfil;
             ViewBag.UserProfileImage = profileImg;
 
-            // 3) Traer perfiles para el grid
+            
             var perfiles = _perfilDal.GetAllOtherProfiles(userId);
 
-            // 4) Usuario actual (para el nombre)
             var usuario = _usuarioDAL.GetUsuarioById(userId);
 
-            // 5) Matches y mensajes nuevos
             var mutuals = _matchesDAL.GetMatchesForUser(userId);
             int matchCount = mutuals.Count;
             int newMsgs = mutuals
                 .Select(u => _matchesDAL.GetConversationMatchId(userId, u.Id))
                 .Sum(matchId => _mensajeDal.ContarNoLeidos(userId, matchId));
 
-            // 6) Pasar datos a la vista
             ViewBag.UserName = usuario?.Nombre ?? "Usuario";
             ViewBag.MatchCount = matchCount;
             ViewBag.NewMsgs = newMsgs;

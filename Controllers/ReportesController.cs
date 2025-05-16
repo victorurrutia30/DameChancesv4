@@ -16,7 +16,7 @@ namespace DameChanceSV2.Controllers
             _usuarioDAL = usuarioDAL;
         }
 
-        // GET: /Reportes/Reportar?idReportado=123
+        // GET: /Reportes/Reportar?idReportado=el id del usuario reportado
         [HttpGet]
         public IActionResult Reportar(int idReportado)
         {

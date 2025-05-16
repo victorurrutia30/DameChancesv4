@@ -9,22 +9,22 @@ namespace DameChanceSV2.Controllers
     {
         private readonly MatchesDAL _matchesDAL;
         private readonly MensajeDAL _mensajeDAL;
-        private readonly PerfilDeUsuarioDAL _perfilDAL;  // <-- nuevo
-        private readonly UsuarioDAL _usuarioDAL;         // <-- nuevo
+        private readonly PerfilDeUsuarioDAL _perfilDAL; 
+        private readonly UsuarioDAL _usuarioDAL;         
 
         public MensajesController(
             MatchesDAL matchesDAL,
             MensajeDAL mensajeDAL,
             PerfilDeUsuarioDAL perfilDAL,
-            UsuarioDAL usuarioDAL)                 // <-- nuevo
+            UsuarioDAL usuarioDAL)                 
         {
             _matchesDAL = matchesDAL;
             _mensajeDAL = mensajeDAL;
-            _perfilDAL = perfilDAL;              // <-- inicialización
-            _usuarioDAL = usuarioDAL;             // <-- inicialización
+            _perfilDAL = perfilDAL;              
+            _usuarioDAL = usuarioDAL;             
         }
 
-        // GET: /Mensajes/Chat?matchId=5
+        // GET: /Mensajes/Chat?matchId
         [HttpGet]
         public IActionResult Chat(int matchId)
         {
@@ -81,10 +81,10 @@ namespace DameChanceSV2.Controllers
             if (!int.TryParse(Request.Cookies["UserSession"], out int userId))
                 return RedirectToAction("Login", "Account");
 
-            // 1) Todos los matches mutuos
+            // Todos los matches mutuos
             var usuarios = _matchesDAL.GetMatchesForUser(userId);
 
-            // 2) Construir conversación + conteo no leídos
+            // Construir conversación + conteo no leídos
             var list = new List<ConversationViewModel>();
             foreach (var u in usuarios)
             {

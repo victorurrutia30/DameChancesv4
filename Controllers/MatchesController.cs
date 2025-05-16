@@ -10,13 +10,13 @@ namespace DameChanceSV2.Controllers
     public class MatchesController : Controller
     {
         private readonly MatchesDAL _matchesDAL;
-        private readonly PerfilDeUsuarioDAL _perfilDeUsuarioDAL; // <-- nuevo campo
+        private readonly PerfilDeUsuarioDAL _perfilDeUsuarioDAL; 
         public MatchesController(
     MatchesDAL matchesDAL,
-    PerfilDeUsuarioDAL perfilDeUsuarioDAL)    // <-- nuevo parámetro
+    PerfilDeUsuarioDAL perfilDeUsuarioDAL)    
         {
             _matchesDAL = matchesDAL;
-            _perfilDeUsuarioDAL = perfilDeUsuarioDAL; // <-- inicialización
+            _perfilDeUsuarioDAL = perfilDeUsuarioDAL; 
         }
 
         // GET: /Matches
@@ -27,10 +27,10 @@ namespace DameChanceSV2.Controllers
             if (!int.TryParse(Request.Cookies["UserSession"], out int userId))
                 return RedirectToAction("Login", "Account");
 
-            // 1) Traer todos los usuarios con match mutuo
+            
             var usuarios = _matchesDAL.GetMatchesForUser(userId);
 
-            // 2) Mapear user.Id → matchId para el chat
+            // Mapear user.Id → matchId para el chat
             var matchMap = new Dictionary<int, int>();
             foreach (var u in usuarios)
             {
@@ -38,7 +38,7 @@ namespace DameChanceSV2.Controllers
             }
             ViewBag.MatchMap = matchMap;
 
-            // 3) Convertir a DashboardProfileViewModel para tener foto e intereses
+            //  Convertir a DashboardProfileViewModel para tener foto e intereses
             var model = usuarios.Select(u => {
                 var perfil = _perfilDeUsuarioDAL.GetPerfilByUsuarioId(u.Id);
                 return new DashboardProfileViewModel

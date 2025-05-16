@@ -5,7 +5,7 @@ using DameChanceSV2.Utilities;
 using System;
 using DameChanceSV2.Services;
 using System.Collections.Generic;
-using Microsoft.AspNetCore.Http; // Para CookieOptions
+using Microsoft.AspNetCore.Http; // Para las CookieOptions
 
 namespace DameChanceSV2.Controllers
 {
@@ -198,7 +198,6 @@ namespace DameChanceSV2.Controllers
                     // Generar enlace de reseteo.
                     var resetLink = Url.Action("ResetPassword", "Account", new { token = token }, Request.Scheme);
 
-                    // Construir asunto y cuerpo del correo.
                     string subject = "Recuperación de contraseña - DameChance";
                     string body = $@"
                         <p>Hola {usuario.Nombre},</p>

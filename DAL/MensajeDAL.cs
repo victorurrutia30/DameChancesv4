@@ -6,7 +6,12 @@ namespace DameChanceSV2.DAL
     public class MensajeDAL
     {
         private readonly Database _database;
-        public MensajeDAL(Database database) => _database = database;
+        private readonly BloqueoDAL _bloqueoDAL;
+        public MensajeDAL(Database database, BloqueoDAL bloqueoDAL)
+        {
+            _database = database;
+            _bloqueoDAL = bloqueoDAL;
+        }
 
         public List<Mensaje> GetMensajesByMatch(int matchId)
         {
@@ -39,6 +44,12 @@ namespace DameChanceSV2.DAL
 
         public void InsertMensaje(Mensaje msg)
         {
+            if (_bloqueoDAL.ExisteBloqueo(msg.EmisorId, msg.ReceptorId) ||
+        _bloqueoDAL.ExisteBloqueo(msg.ReceptorId, msg.EmisorId))
+            {
+                throw new InvalidOperationException("No puedes enviar mensajes a un usuario bloqueado.");
+            }
+
             using var conn = _database.GetConnection();
             const string sql = @"
                 INSERT INTO Mensajes (MatchId, EmisorId, ReceptorId, Contenido)

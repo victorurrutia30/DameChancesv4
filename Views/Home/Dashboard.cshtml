@@ -67,6 +67,7 @@
                                 <p class="card-text mb-1"><strong>Género:</strong> @p.Genero</p>
                                 <p class="card-text"><strong>Intereses:</strong> @p.Intereses</p>
                                 <p class="card-text mb-3"><strong>Ubicación:</strong> @p.Ubicacion</p>
+                                
                                 <form asp-controller="Matches" asp-action="Like" method="post" class="mt-auto">
                                     @Html.AntiForgeryToken()
                                     <input type="hidden" name="targetId" value="@p.UsuarioId" />
@@ -81,6 +82,18 @@
                                             class="btn-report"
                                             title="Reportar usuario">
                                         <i class="bi bi-flag-fill"></i>
+                                    </button>
+                                </form>
+
+                                @* Botón de Bloquear *@
+                                <form asp-controller="Bloqueos" asp-action="Bloquear" method="post" class="d-inline-block">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="idBloqueado" value="@p.UsuarioId" />
+                                    <button type="submit"
+                                            class="btn btn-outline-secondary btn-sm"
+                                            title="Bloquear usuario"
+                                            onclick="return confirm('¿Seguro que deseas bloquear a este usuario?');">
+                                        <i class="bi bi-slash-circle-fill"></i>
                                     </button>
                                 </form>
 

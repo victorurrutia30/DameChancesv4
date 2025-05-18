@@ -19,6 +19,7 @@ namespace DameChanceSV2
             builder.Services.AddTransient<MatchesDAL>();
             builder.Services.AddTransient<MensajeDAL>();
             builder.Services.AddTransient<ReporteDAL>();
+            builder.Services.AddTransient<BloqueoDAL>();
 
             // Registro del servicio de correo.
             builder.Services.AddTransient<IEmailService, EmailService>();

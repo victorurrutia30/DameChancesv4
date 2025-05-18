@@ -111,7 +111,13 @@ namespace DameChanceSV2.DAL
         SELECT p.UsuarioId, u.Nombre, p.Edad, p.Genero, p.Intereses, p.Ubicacion, p.ImagenPerfil
         FROM PerfilesDeUsuario p
         INNER JOIN Usuarios u ON u.Id = p.UsuarioId
-        WHERE p.UsuarioId <> @me AND u.Estado = 1"; // sólo verificados
+        WHERE p.UsuarioId <> @me AND u.Estado = 1
+        AND p.UsuarioId NOT IN (
+            SELECT UsuarioBloqueadoId FROM Bloqueos WHERE UsuarioId = @me
+        )
+        AND p.UsuarioId NOT IN (
+            SELECT UsuarioId FROM Bloqueos WHERE UsuarioBloqueadoId = @me
+        )"; // sólo verificados
             using var cmd = new SqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@me", currentUserId);
             conn.Open();

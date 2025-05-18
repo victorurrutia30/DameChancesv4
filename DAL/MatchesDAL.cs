@@ -60,11 +60,17 @@ namespace DameChanceSV2.DAL
             using var conn = _database.GetConnection();
             const string sql = @"
                 SELECT u.Id, u.Nombre, u.Correo, u.Contrasena, u.Estado, u.RolId, u.FechaRegistro
-                FROM Usuarios u
-                INNER JOIN Matches m1 
-                  ON m1.Usuario2Id = u.Id AND m1.Usuario1Id = @uid
-                INNER JOIN Matches m2 
-                  ON m2.Usuario1Id = u.Id AND m2.Usuario2Id = @uid";
+    FROM Usuarios u
+    INNER JOIN Matches m1 
+        ON m1.Usuario2Id = u.Id AND m1.Usuario1Id = @uid
+    INNER JOIN Matches m2 
+        ON m2.Usuario1Id = u.Id AND m2.Usuario2Id = @uid
+    WHERE u.Id NOT IN (
+        SELECT UsuarioBloqueadoId FROM Bloqueos WHERE UsuarioId = @uid
+    )
+    AND u.Id NOT IN (
+        SELECT UsuarioId FROM Bloqueos WHERE UsuarioBloqueadoId = @uid
+    )";
             using var cmd = new SqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@uid", usuarioId);
             conn.Open();

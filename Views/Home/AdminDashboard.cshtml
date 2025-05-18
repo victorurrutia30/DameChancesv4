@@ -8,7 +8,24 @@
 
     <h2 class="mb-4 text-center"><i class="bi bi-speedometer2 me-2"></i>Panel de Administración</h2>
 
-    
+    <div class="alert alert-info mt-4 text-center">
+        @if (ViewBag.SinVerificarMas3Dias > 0)
+        {
+            <strong>@ViewBag.SinVerificarMas3Dias cuentas</strong>
+            <span>sin verificar en más de 3 días.</span>
+        }
+        @if (ViewBag.RegistradosHoy > 0)
+        {
+            <div class="alert alert-success text-center">
+                <strong>@ViewBag.RegistradosHoy cuentas</strong> registradas hoy.
+            </div>
+        }
+        else
+        {
+            <span>No hay alertas pendientes.</span>
+        }
+    </div>
+
     <div class="row g-3 mb-5 text-center">
         <div class="col-md-3">
             <div class="summary-card bg-summary-primary">
@@ -24,20 +41,25 @@
                 <p>@ViewBag.Verificados</p>
             </div>
         </div>
+
         <div class="col-md-3">
-            <div class="summary-card bg-summary-warning">
-                <i class="bi bi-exclamation-circle-fill summary-icon"></i>
-                <h5>No Verificados</h5>
-                <p>@ViewBag.NoVerificados</p>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="summary-card bg-summary-danger">
+            <div class="summary-card bg-summary-admins">
                 <i class="bi bi-shield-lock-fill summary-icon"></i>
                 <h5>Administradores</h5>
                 <p>@ViewBag.Admins</p>
             </div>
         </div>
+
+        <div class="col-md-3">
+        <a asp-controller="Reportes" asp-action="Index" class="text-decoration-none">
+            <div class="summary-card bg-summary-reports">
+                <i class="bi bi-flag-fill summary-icon"></i>
+                <h5>Reportes de Usuarios</h5>
+                <p style="font-size: 1.6rem; font-weight: bold;">@ViewBag.TotalReportes</p>
+            </div>
+        </a>
+        </div>
+
     </div>
 
     
@@ -88,16 +110,6 @@
     </div>
 
     
-    <div class="alert alert-info mt-4 text-center">
-        @if (ViewBag.SinVerificarMas3Dias > 0)
-        {
-            <strong>@ViewBag.SinVerificarMas3Dias cuentas</strong>
-            <span>sin verificar en más de 3 días.</span>
-        }
-        else
-        {
-            <span>No hay alertas pendientes.</span>
-        }
-    </div>
+    
 
 </div>

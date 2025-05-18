@@ -1,8 +1,10 @@
 ﻿@model List<DameChanceSV2.Models.Reporte>
+@inject DameChanceSV2.DAL.UsuarioDAL UsuarioDAL
 
 @{
     ViewData["Title"] = "Reportes de Usuarios";
 }
+
 
 <h2>Reportes de Usuarios</h2>
 <table class="table table-bordered table-hover">
@@ -22,21 +24,33 @@
         {
             <tr>
                 <td>@r.Id</td>
-                <td>@r.IdReportante</td>
-                <td>@r.IdReportado</td>
+                @{
+                    var reportante = UsuarioDAL.GetUsuarioById(r.IdReportante);
+                    var reportado = UsuarioDAL.GetUsuarioById(r.IdReportado);
+                }
+                <td>@(reportante != null ? reportante.Nombre : "ID " + r.IdReportante)</td>
+                <td>@(reportado != null ? reportado.Nombre : "ID " + r.IdReportado)</td>
                 <td>@r.Motivo</td>
                 <td>@r.FechaReporte.ToString("g")</td>
                 <td>@(r.Resuelto ? "Sí" : "No")</td>
                 <td>
                     @if (!r.Resuelto)
                     {
-                        <form asp-action="MarcarResuelto" method="post" class="d-inline">
+                        <form asp-action="MarcarResueltoConMensaje" method="post">
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="id" value="@r.Id" />
-                            <button type="submit" class="btn btn-sm btn-success">
-                                Marcar resuelto
-                            </button>
+                            <textarea name="mensajeResolucion"
+                                      placeholder="Mensaje de resolución"
+                                      class="form-control mb-2"
+                                      rows="2"></textarea>
+                            <button type="submit" class="btn btn-sm btn-success">Marcar como resuelto</button>
                         </form>
+                    }
+                    @if (!string.IsNullOrEmpty(r.MensajeResolucion))
+                    {
+                        <div class="alert alert-secondary mt-2">
+                            <strong>Mensaje del admin:</strong> @r.MensajeResolucion
+                        </div>
                     }
                 </td>
             </tr>

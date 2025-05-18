@@ -266,6 +266,16 @@ namespace DameChanceSV2.DAL
             return count;
         }
 
+        public int GetUsuariosRegistradosHoy()
+        {
+            using var conn = _database.GetConnection();
+            const string sql = "SELECT COUNT(*) FROM Usuarios WHERE CAST(FechaRegistro AS DATE) = CAST(GETDATE() AS DATE)";
+            using var cmd = new SqlCommand(sql, conn);
+            conn.Open();
+            return (int)cmd.ExecuteScalar();
+        }
+
+
 
     }
 }

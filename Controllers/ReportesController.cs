@@ -72,5 +72,21 @@ namespace DameChanceSV2.Controllers
             _reporteDAL.UpdateResuelto(id, true);
             return RedirectToAction("Index");
         }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult MarcarResueltoConMensaje(int id, string mensajeResolucion)
+        {
+            if (!int.TryParse(Request.Cookies["UserSession"], out int userId))
+                return RedirectToAction("Login", "Account");
+
+            var usuario = _usuarioDAL.GetUsuarioById(userId);
+            if (usuario == null || usuario.RolId != 1)
+                return NotFound();
+
+            _reporteDAL.MarcarComoResueltoConMensaje(id, mensajeResolucion);
+            return RedirectToAction("Index");
+        }
+
     }
 }

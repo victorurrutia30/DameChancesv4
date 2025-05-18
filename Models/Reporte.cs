@@ -20,5 +20,6 @@ namespace DameChanceSV2.Models
 
         // Marcar si el admin ya resolvió el caso
         public bool Resuelto { get; set; }
+        public string? MensajeResolucion { get; set; }
     }
 }

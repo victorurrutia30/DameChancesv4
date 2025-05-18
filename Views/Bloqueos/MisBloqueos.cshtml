@@ -1,0 +1,43 @@
+﻿@model List<DameChanceSV2.Models.Usuario>
+@{
+    ViewData["Title"] = "Usuarios Bloqueados";
+}
+
+<div class="container mt-4">
+    <h2 class="mb-4">Usuarios que has bloqueado</h2>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info">No has bloqueado a ningún usuario.</div>
+    }
+    else
+    {
+        <table class="table table-bordered table-hover">
+            <thead class="table-light">
+                <tr>
+                    <th>Nombre</th>
+                    <th>Correo</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var u in Model)
+                {
+                    <tr>
+                        <td>@u.Nombre</td>
+                        <td>@u.Correo</td>
+                        <td>
+                            <form asp-controller="Bloqueos" asp-action="Desbloquear" method="post" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="idBloqueado" value="@u.Id" />
+                                <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Desbloquear a este usuario?');">
+                                    Desbloquear
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>

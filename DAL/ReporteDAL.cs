@@ -31,9 +31,9 @@ namespace DameChanceSV2.DAL
             var list = new List<Reporte>();
             using var conn = _database.GetConnection();
             const string sql = @"
-                SELECT Id, IdReportante, IdReportado, Motivo, FechaReporte, Resuelto
-                  FROM Reportes
-              ORDER BY FechaReporte DESC";
+    SELECT Id, IdReportante, IdReportado, Motivo, FechaReporte, Resuelto, MensajeResolucion
+    FROM Reportes
+    ORDER BY FechaReporte DESC";
             using var cmd = new SqlCommand(sql, conn);
             conn.Open();
             using var reader = cmd.ExecuteReader();
@@ -46,7 +46,8 @@ namespace DameChanceSV2.DAL
                     IdReportado = reader.GetInt32(2),
                     Motivo = reader.GetString(3),
                     FechaReporte = reader.GetDateTime(4),
-                    Resuelto = reader.GetBoolean(5)
+                    Resuelto = reader.GetBoolean(5),
+                    MensajeResolucion = reader.IsDBNull(6) ? null : reader.GetString(6)
                 });
             }
             return list;
@@ -63,5 +64,30 @@ namespace DameChanceSV2.DAL
             conn.Open();
             cmd.ExecuteNonQuery();
         }
+
+        public void MarcarComoResueltoConMensaje(int id, string mensaje)
+        {
+            using var conn = _database.GetConnection();
+            const string sql = @"
+        UPDATE Reportes
+        SET Resuelto = 1,
+            MensajeResolucion = @mensaje
+        WHERE Id = @id";
+            using var cmd = new SqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@mensaje", mensaje);
+            cmd.Parameters.AddWithValue("@id", id);
+            conn.Open();
+            cmd.ExecuteNonQuery();
+        }
+
+        public int GetTotalReportes()
+        {
+            using var conn = _database.GetConnection();
+            const string sql = "SELECT COUNT(*) FROM Reportes";
+            using var cmd = new SqlCommand(sql, conn);
+            conn.Open();
+            return (int)cmd.ExecuteScalar();
+        }
+
     }
 }

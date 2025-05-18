@@ -15,14 +15,21 @@ namespace DameChanceSV2.Controllers
         private readonly PerfilDeUsuarioDAL _perfilDal;
         private readonly MatchesDAL _matchesDAL;      
         private readonly MensajeDAL _mensajeDal;
+        private readonly ReporteDAL _reporteDAL;
 
-        public HomeController(ILogger<HomeController> logger, UsuarioDAL usuarioDAL, PerfilDeUsuarioDAL perfilDal, MatchesDAL matchesDAL, MensajeDAL mensajeDAL)
+        public HomeController(ILogger<HomeController> logger,
+                      UsuarioDAL usuarioDAL,
+                      PerfilDeUsuarioDAL perfilDal,
+                      MatchesDAL matchesDAL,
+                      MensajeDAL mensajeDAL,
+                      ReporteDAL reporteDAL) // nuevo
         {
             _logger = logger;
             _usuarioDAL = usuarioDAL;
             _perfilDal = perfilDal;
-            _matchesDAL = matchesDAL;      
+            _matchesDAL = matchesDAL;
             _mensajeDal = mensajeDAL;
+            _reporteDAL = reporteDAL; // nuevo
         }
 
         public IActionResult Index()
@@ -52,15 +59,20 @@ namespace DameChanceSV2.Controllers
             var (total, verificados, noVerificados, admins) = _usuarioDAL.GetUserCounts();
             var listaUsuarios = _usuarioDAL.GetAllUsuarios();
             int sinVerificarMas3Dias = _usuarioDAL.GetUnverifiedCountOlderThan3Days();
+            int registradosHoy = _usuarioDAL.GetUsuariosRegistradosHoy();
+            int totalReportes = _reporteDAL.GetTotalReportes();
 
+            ViewBag.RegistradosHoy = registradosHoy;
             ViewBag.Total = total;
             ViewBag.Verificados = verificados;
             ViewBag.NoVerificados = noVerificados;
             ViewBag.Admins = admins;
             ViewBag.SinVerificarMas3Dias = sinVerificarMas3Dias;
+            ViewBag.TotalReportes = totalReportes; // NUEVO
 
             return View("AdminDashboard", listaUsuarios);
         }
+
 
         // GET: /Home/CreateUser
         [HttpGet]

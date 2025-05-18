@@ -20,7 +20,8 @@
                     <span class="badge bg-danger ms-1">@ViewBag.NewMsgs</span>
                 }
             </a>
-            <a class="nav-link text-white" asp-controller="Reportes" asp-action="Index">Reportes</a>
+            <a class="nav-link text-white" asp-controller="Reportes" asp-action="MisReportes">Mis Reportes</a>
+
             <a class="nav-link text-white" asp-controller="Bloqueos" asp-action="MisBloqueos">Bloqueados</a>
 
         </nav>
@@ -78,26 +79,27 @@
                                     </button>
                                 </form>
 
-                                <form asp-controller="Reportes" asp-action="Reportar" method="get" style="position:relative;">
-                                    <input type="hidden" name="idReportado" value="@p.UsuarioId" />
-                                    <button type="submit"
-                                            class="btn-report"
-                                            title="Reportar usuario">
-                                        <i class="bi bi-flag-fill"></i>
-                                    </button>
-                                </form>
+                                <div class="top-action-buttons">
+                                    <form asp-controller="Reportes" asp-action="Reportar" method="get">
+                                        <input type="hidden" name="idReportado" value="@p.UsuarioId" />
+                                        <button type="submit"
+                                                class="btn btn-light btn-sm me-1"
+                                                title="Reportar usuario">
+                                            <i class="bi bi-flag-fill text-danger"></i>
+                                        </button>
+                                    </form>
 
-                                @* Botón de Bloquear *@
-                                <form asp-controller="Bloqueos" asp-action="Bloquear" method="post" class="d-inline-block">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="idBloqueado" value="@p.UsuarioId" />
-                                    <button type="submit"
-                                            class="btn btn-outline-secondary btn-sm"
-                                            title="Bloquear usuario"
-                                            onclick="return confirm('¿Seguro que deseas bloquear a este usuario?');">
-                                        <i class="bi bi-slash-circle-fill"></i>
-                                    </button>
-                                </form>
+                                    <form asp-controller="Bloqueos" asp-action="Bloquear" method="post">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="idBloqueado" value="@p.UsuarioId" />
+                                        <button type="submit"
+                                                class="btn btn-light btn-sm"
+                                                title="Bloquear usuario"
+                                                onclick="return confirm('¿Seguro que deseas bloquear a este usuario?');">
+                                            <i class="bi bi-slash-circle-fill text-secondary"></i>
+                                        </button>
+                                    </form>
+                                </div>
 
                             </div>
                         </div>

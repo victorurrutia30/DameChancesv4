@@ -23,7 +23,7 @@
     </button>
 </form>
 
-<div class="chat-window mb-4">
+<div class="chat-window mb-4" id="chatWindow">
     @foreach (var m in Model)
     {
         var esMio = m.EmisorId == yo;
@@ -50,3 +50,13 @@
         </button>
     </div>
 </form>
+
+<script>
+    window.onload = function () {
+        var chatWindow = document.getElementById("chatWindow");
+        if (chatWindow) {
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+    };
+</script>
+

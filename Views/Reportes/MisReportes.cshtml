@@ -1,0 +1,49 @@
+﻿@model List<DameChanceSV2.Models.Reporte>
+@inject DameChanceSV2.DAL.UsuarioDAL UsuarioDAL
+
+@{
+    ViewData["Title"] = "Mis Reportes";
+}
+
+<h2 class="mb-4">Mis Reportes Enviados</h2>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">No has enviado ningún reporte aún.</div>
+}
+else
+{
+    <table class="table table-striped table-bordered">
+        <thead class="table-light">
+            <tr>
+                <th>Reportado</th>
+                <th>Motivo</th>
+                <th>Fecha</th>
+                <th>Estado</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var r in Model)
+            {
+                var reportado = UsuarioDAL.GetUsuarioById(r.IdReportado);
+                <tr>
+                    <td>@(reportado?.Nombre ?? $"ID {r.IdReportado}")</td>
+                    <td>@r.Motivo</td>
+                    <td>@r.FechaReporte.ToString("g")</td>
+                    <td>
+                        @if (!r.Resuelto)
+                        {
+                            <span class="badge bg-warning text-dark">En revisión</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-success">Resuelto</span>
+                            <br />
+                            <small class="text-muted d-block mt-1">@r.MensajeResolucion</small>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

@@ -88,5 +88,20 @@ namespace DameChanceSV2.Controllers
             return RedirectToAction("Index");
         }
 
+        [HttpGet]
+        public IActionResult MisReportes()
+        {
+            if (!int.TryParse(Request.Cookies["UserSession"], out int userId))
+                return RedirectToAction("Login", "Account");
+
+            var usuario = _usuarioDAL.GetUsuarioById(userId);
+            if (usuario == null)
+                return RedirectToAction("Login", "Account");
+
+            var reportes = _reporteDAL.GetReportesPorUsuario(userId);
+            return View(reportes);
+        }
+
+
     }
 }

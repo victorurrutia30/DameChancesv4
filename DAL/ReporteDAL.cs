@@ -83,10 +83,39 @@ namespace DameChanceSV2.DAL
         public int GetTotalReportes()
         {
             using var conn = _database.GetConnection();
-            const string sql = "SELECT COUNT(*) FROM Reportes";
+            const string sql = "SELECT COUNT(*) FROM Reportes WHERE Resuelto = 0";
             using var cmd = new SqlCommand(sql, conn);
             conn.Open();
             return (int)cmd.ExecuteScalar();
+        }
+
+        public List<Reporte> GetReportesPorUsuario(int usuarioId)
+        {
+            var list = new List<Reporte>();
+            using var conn = _database.GetConnection();
+            const string sql = @"
+        SELECT Id, IdReportante, IdReportado, Motivo, FechaReporte, Resuelto, MensajeResolucion
+        FROM Reportes
+        WHERE IdReportante = @uid
+        ORDER BY FechaReporte DESC";
+            using var cmd = new SqlCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@uid", usuarioId);
+            conn.Open();
+            using var reader = cmd.ExecuteReader();
+            while (reader.Read())
+            {
+                list.Add(new Reporte
+                {
+                    Id = reader.GetInt32(0),
+                    IdReportante = reader.GetInt32(1),
+                    IdReportado = reader.GetInt32(2),
+                    Motivo = reader.GetString(3),
+                    FechaReporte = reader.GetDateTime(4),
+                    Resuelto = reader.GetBoolean(5),
+                    MensajeResolucion = reader.IsDBNull(6) ? null : reader.GetString(6)
+                });
+            }
+            return list;
         }
 
     }

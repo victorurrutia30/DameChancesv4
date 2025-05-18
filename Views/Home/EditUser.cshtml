@@ -28,9 +28,15 @@
 
             <!-- RolId -->
             <div class="form-group mb-3">
-                <label class="form-label"><i class="bi bi-person-badge me-1"></i>Rol (1 = Admin, 2 = Usuario)</label>
-                <input type="number" name="RolId" class="form-control input-custom" value="@Model.RolId" min="1" max="2" required />
-            </div>
+    <label class="form-label"><i class="bi bi-person-badge me-1"></i>Rol</label>
+                <select name="RolId" class="form-select input-custom" required>
+                    @foreach (var rol in (SelectList)ViewBag.Roles)
+                    {
+                        var selected = rol.Value == Model.RolId.ToString() ? "selected" : "";
+                        <option value="@rol.Value" selected="@selected">@rol.Text</option>
+                    }
+                </select>
+</div>
 
             <!-- Estado (Verificado o No Verificado) -->
             <div class="form-group mb-4">

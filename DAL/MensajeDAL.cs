@@ -5,23 +5,33 @@ namespace DameChanceSV2.DAL
 {
     public class MensajeDAL
     {
+        // ==========================================
+        // DEPENDENCIAS INYECTADAS
+        // Database: acceso a conexión SQL Server
+        // BloqueoDAL: para verificar restricciones de mensajería
+        // ==========================================
         private readonly Database _database;
         private readonly BloqueoDAL _bloqueoDAL;
+
         public MensajeDAL(Database database, BloqueoDAL bloqueoDAL)
         {
             _database = database;
             _bloqueoDAL = bloqueoDAL;
         }
 
+        // ==========================================
+        // OBTENER TODOS LOS MENSAJES DE UN MATCH
+        // Devuelve la conversación ordenada por fecha
+        // ==========================================
         public List<Mensaje> GetMensajesByMatch(int matchId)
         {
             var lista = new List<Mensaje>();
             using var conn = _database.GetConnection();
             const string sql = @"
                 SELECT Id, MatchId, EmisorId, ReceptorId, Contenido, FechaEnvio, Leido
-                  FROM Mensajes
-                 WHERE MatchId = @m
-              ORDER BY FechaEnvio";
+                FROM Mensajes
+                WHERE MatchId = @m
+                ORDER BY FechaEnvio";
             using var cmd = new SqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@m", matchId);
             conn.Open();
@@ -42,10 +52,14 @@ namespace DameChanceSV2.DAL
             return lista;
         }
 
+        // ==========================================
+        // INSERTAR NUEVO MENSAJE
+        // Verifica primero si hay bloqueo mutuo antes de guardar
+        // ==========================================
         public void InsertMensaje(Mensaje msg)
         {
             if (_bloqueoDAL.ExisteBloqueo(msg.EmisorId, msg.ReceptorId) ||
-        _bloqueoDAL.ExisteBloqueo(msg.ReceptorId, msg.EmisorId))
+                _bloqueoDAL.ExisteBloqueo(msg.ReceptorId, msg.EmisorId))
             {
                 throw new InvalidOperationException("No puedes enviar mensajes a un usuario bloqueado.");
             }
@@ -63,6 +77,10 @@ namespace DameChanceSV2.DAL
             cmd.ExecuteNonQuery();
         }
 
+        // ==========================================
+        // MARCAR MENSAJE COMO LEÍDO
+        // Se actualiza el campo Leido a 1 (true)
+        // ==========================================
         public void MarcarComoLeido(int mensajeId)
         {
             using var conn = _database.GetConnection();
@@ -73,14 +91,18 @@ namespace DameChanceSV2.DAL
             cmd.ExecuteNonQuery();
         }
 
+        // ==========================================
+        // CONTAR MENSAJES NO LEÍDOS DE UN MATCH
+        // Solo se cuentan si el usuario es el receptor y aún no los ha leído
+        // ==========================================
         public int ContarNoLeidos(int usuarioId, int matchId)
         {
             using var conn = _database.GetConnection();
             const string sql = @"
                 SELECT COUNT(*) FROM Mensajes
-                 WHERE MatchId = @m
-                   AND ReceptorId = @u
-                   AND Leido = 0";
+                WHERE MatchId = @m
+                  AND ReceptorId = @u
+                  AND Leido = 0";
             using var cmd = new SqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@m", matchId);
             cmd.Parameters.AddWithValue("@u", usuarioId);

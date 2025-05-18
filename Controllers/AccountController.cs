@@ -5,22 +5,26 @@ using DameChanceSV2.Utilities;
 using System;
 using DameChanceSV2.Services;
 using System.Collections.Generic;
-using Microsoft.AspNetCore.Http; // Para las CookieOptions
+using Microsoft.AspNetCore.Http;
 
 namespace DameChanceSV2.Controllers
 {
     public class AccountController : Controller
     {
+        // =========================================
+        // DEPENDENCIAS Y CAMPOS PRIVADOS
+        // =========================================
         private readonly UsuarioDAL _usuarioDAL;
         private readonly IEmailService _emailService;
         private readonly PerfilDeUsuarioDAL _perfilDeUsuarioDAL;
 
-        // Diccionario para almacenar temporalmente los tokens de verificación (para demo).
+        // Almacenamiento temporal para tokens de verificación de cuenta y reseteo de contrasena.
         private static Dictionary<string, int> EmailVerificationTokens = new Dictionary<string, int>();
-
-        // Diccionario para almacenar tokens de reseteo de contraseña (para demo).
         private static Dictionary<string, int> PasswordResetTokens = new Dictionary<string, int>();
 
+        // =========================================
+        // CONSTRUCTOR - Inyección de dependencias
+        // =========================================
         public AccountController(UsuarioDAL usuarioDAL, IEmailService emailService, PerfilDeUsuarioDAL perfilDeUsuarioDAL)
         {
             _usuarioDAL = usuarioDAL;
@@ -28,21 +32,24 @@ namespace DameChanceSV2.Controllers
             _perfilDeUsuarioDAL = perfilDeUsuarioDAL;
         }
 
-        // GET: /Account/Registro
+        // =========================================
+        // REGISTRO DE USUARIO (GET/POST)
+        // =========================================
+
+        // Muestra el formulario de registro
         [HttpGet]
         public IActionResult Registro()
         {
             return View();
         }
 
-        // POST: /Account/Registro
+        // Procesa el registro del usuario, genera token y envía correo
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Registro(RegistroViewModel model)
         {
             if (ModelState.IsValid)
             {
-                // Verificar si el correo ya existe.
                 var usuarioExistente = _usuarioDAL.GetUsuarioByCorreo(model.Correo);
                 if (usuarioExistente != null)
                 {
@@ -50,42 +57,35 @@ namespace DameChanceSV2.Controllers
                     return View(model);
                 }
 
-                // Crear usuario con contraseña hasheada y rol por defecto (usuario estándar).
                 Usuario nuevoUsuario = new Usuario
                 {
                     Nombre = model.Nombre,
                     Correo = model.Correo,
                     Contrasena = PasswordHelper.HashPassword(model.Contrasena),
-                    Estado = false, // Inicialmente en false hasta que se verifique el correo
-                    RolId = 2       // Asigna RolId=2 (usuario) por defecto
+                    Estado = false,
+                    RolId = 2
                 };
 
                 int nuevoId = _usuarioDAL.InsertUsuario(nuevoUsuario);
 
-                // Generar token único para verificación y almacenarlo.
                 string token = Guid.NewGuid().ToString();
                 EmailVerificationTokens[token] = nuevoId;
 
-                // Generar enlace de verificación.
                 var verificationLink = Url.Action("VerificarCuenta", "Account", new { token = token }, Request.Scheme);
-
-                // Enviar correo de verificación.
                 string subject = "Verifica tu cuenta en DameChance";
-                string body = $"<p>Hola {model.Nombre},</p>" +
-                              $"<p>Por favor, verifica tu cuenta haciendo clic en el siguiente enlace:</p>" +
-                              $"<p><a href='{verificationLink}'>Verificar mi cuenta</a></p>" +
-                              $"<p>Si no te registraste en nuestro sitio, ignora este mensaje.</p>";
+                string body = $"<p>Hola {model.Nombre},</p><p>Verifica tu cuenta haciendo clic en:</p><a href='{verificationLink}'>Verificar mi cuenta</a>";
 
                 _emailService.SendEmail(model.Correo, subject, body);
 
-                // Mostrar vista informativa.
-                ViewBag.Message = "Registro exitoso. Se ha enviado un correo de verificación a tu dirección.";
+                ViewBag.Message = "Registro exitoso. Se ha enviado un correo de verificación.";
                 return View("Informacion");
             }
             return View(model);
         }
 
-        // GET: /Account/VerificarCuenta?token=xxx
+        // =========================================
+        // VERIFICAR CUENTA POR TOKEN (GET)
+        // =========================================
         [HttpGet]
         public IActionResult VerificarCuenta(string token)
         {
@@ -96,24 +96,23 @@ namespace DameChanceSV2.Controllers
             }
 
             int usuarioId = EmailVerificationTokens[token];
-            // Actualizar el estado del usuario a verificado (true).
             _usuarioDAL.UpdateEstado(usuarioId, true);
-
-            // Eliminar el token.
             EmailVerificationTokens.Remove(token);
 
             ViewBag.Message = "Cuenta verificada con éxito. Ahora puedes iniciar sesión.";
             return View();
         }
 
-        // GET: /Account/Login
+        // =========================================
+        // LOGIN (GET/POST)
+        // =========================================
+
         [HttpGet]
         public IActionResult Login()
         {
             return View();
         }
 
-        // POST: /Account/Login
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Login(LoginViewModel model)
@@ -125,48 +124,41 @@ namespace DameChanceSV2.Controllers
                 {
                     if (!usuario.Estado)
                     {
-                        ModelState.AddModelError("", "Tu cuenta no está verificada. Revisa tu correo electrónico.");
+                        ModelState.AddModelError("", "Tu cuenta no está verificada.");
                         return View(model);
                     }
-                    // Autenticación exitosa. Crear cookie de sesión.
+
                     var options = new CookieOptions
                     {
                         HttpOnly = true,
                         Secure = true,
                         Expires = DateTime.Now.AddMinutes(30)
                     };
+
                     Response.Cookies.Append("UserSession", usuario.Id.ToString(), options);
-                    // Establecer también la cookie del rol.
                     Response.Cookies.Append("UserRole", usuario.RolId.ToString(), options);
 
-                    // Verificar si tiene un perfil
                     if (usuario.RolId != 1)
                     {
                         var perfil = _perfilDeUsuarioDAL.GetPerfilByUsuarioId(usuario.Id);
                         if (perfil == null)
-                        {
-                            // Redirige al formulario de completar perfil
                             return RedirectToAction("CompletarPerfil", "Account");
-                        }
                     }
 
-
-                    // Redirigir según rol.
-                    if (usuario.RolId == 1)
-                    {
-                        return RedirectToAction("AdminDashboard", "Home");
-                    }
-                    else
-                    {
-                        return RedirectToAction("Dashboard", "Home");
-                    }
+                    return usuario.RolId == 1
+                        ? RedirectToAction("AdminDashboard", "Home")
+                        : RedirectToAction("Dashboard", "Home");
                 }
-                ModelState.AddModelError(string.Empty, "Correo o contraseña incorrectos.");
+
+                ModelState.AddModelError(string.Empty, "Correo o password incorrectos.");
             }
             return View(model);
         }
 
-        // GET: /Account/Logout
+        // =========================================
+        // LOGOUT (GET)
+        // =========================================
+
         public IActionResult Logout()
         {
             Response.Cookies.Delete("UserSession");
@@ -174,14 +166,16 @@ namespace DameChanceSV2.Controllers
             return RedirectToAction("Login");
         }
 
-        // GET: /Account/RecuperarContrasena
+        // =========================================
+        // RECUPERAR CONTRASEnA (GET/POST)
+        // =========================================
+
         [HttpGet]
         public IActionResult RecuperarContrasena()
         {
             return View();
         }
 
-        // POST: /Account/RecuperarContrasena
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult RecuperarContrasena(RecuperarContrasenaViewModel model)
@@ -191,20 +185,12 @@ namespace DameChanceSV2.Controllers
                 var usuario = _usuarioDAL.GetUsuarioByCorreo(model.Correo);
                 if (usuario != null)
                 {
-                    // Generar token para recuperación.
                     string token = Guid.NewGuid().ToString();
                     PasswordResetTokens[token] = usuario.Id;
 
-                    // Generar enlace de reseteo.
                     var resetLink = Url.Action("ResetPassword", "Account", new { token = token }, Request.Scheme);
-
-                    string subject = "Recuperación de contraseña - DameChance";
-                    string body = $@"
-                        <p>Hola {usuario.Nombre},</p>
-                        <p>Recibimos una solicitud para restablecer tu contraseña. 
-                        Por favor, haz clic en el siguiente enlace para continuar:</p>
-                        <p><a href='{resetLink}'>Recuperar Contraseña</a></p>
-                        <p>Si no solicitaste este cambio, puedes ignorar este mensaje.</p>";
+                    string subject = "Recuperación de password - DameChance";
+                    string body = $"<p>Hola {usuario.Nombre},</p><p>Recibimos una solicitud para restablecer tu password.</p><a href='{resetLink}'>Recuperar Password</a>";
 
                     _emailService.SendEmail(usuario.Correo, subject, body);
 
@@ -218,7 +204,10 @@ namespace DameChanceSV2.Controllers
             return View(model);
         }
 
-        // GET: /Account/ResetPassword?token=xxx
+        // =========================================
+        // RESET PASSWORD POR TOKEN (GET/POST)
+        // =========================================
+
         [HttpGet]
         public IActionResult ResetPassword(string token)
         {
@@ -226,7 +215,6 @@ namespace DameChanceSV2.Controllers
             return View();
         }
 
-        // POST: /Account/ResetPassword
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult ResetPassword(string token, string nuevaContrasena, string confirmarContrasena)
@@ -237,9 +225,10 @@ namespace DameChanceSV2.Controllers
                 ViewBag.Token = token;
                 return View();
             }
+
             if (nuevaContrasena != confirmarContrasena)
             {
-                ModelState.AddModelError("", "Las contraseñas no coinciden.");
+                ModelState.AddModelError("", "Las passwords no coinciden.");
                 ViewBag.Token = token;
                 return View();
             }
@@ -259,46 +248,35 @@ namespace DameChanceSV2.Controllers
             return RedirectToAction("Login");
         }
 
-        // GET: /Account/CompletarPerfil
+        // =========================================
+        // COMPLETAR PERFIL (GET/POST)
+        // =========================================
+
         [HttpGet]
         public IActionResult CompletarPerfil()
         {
-            // Solo permitir si está logueado
             var userSession = Request.Cookies["UserSession"];
             if (string.IsNullOrEmpty(userSession))
-            {
                 return RedirectToAction("Login");
-            }
 
             return View();
         }
 
-        // POST: /Account/CompletarPerfil
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult CompletarPerfil(CompletarPerfilViewModel model)
         {
             var userSession = Request.Cookies["UserSession"];
-            if (string.IsNullOrEmpty(userSession))
-            {
+            if (string.IsNullOrEmpty(userSession) || !int.TryParse(userSession, out int userId))
                 return RedirectToAction("Login");
-            }
-
-            if (!int.TryParse(userSession, out int userId))
-            {
-                return RedirectToAction("Login");
-            }
 
             if (ModelState.IsValid)
             {
-                // Guardar el perfil en la base de datos
                 var perfilExistente = _perfilDeUsuarioDAL.GetPerfilByUsuarioId(userId);
                 string rutaImagen = null;
 
-                // Manejo de la imagen, si el usuario subió algo
                 if (model.ImagenPerfil != null && model.ImagenPerfil.Length > 0)
                 {
-                    // Nombre único para el archivo
                     string nombreArchivo = Guid.NewGuid().ToString() + System.IO.Path.GetExtension(model.ImagenPerfil.FileName);
                     string carpeta = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "perfiles");
                     string rutaFisica = Path.Combine(carpeta, nombreArchivo);
@@ -308,13 +286,11 @@ namespace DameChanceSV2.Controllers
                         model.ImagenPerfil.CopyTo(stream);
                     }
 
-                    // Guardar la ruta relativa para la BD
                     rutaImagen = Path.Combine("images", "perfiles", nombreArchivo).Replace("\\", "/");
                 }
 
                 if (perfilExistente == null)
                 {
-                    // Crear nuevo perfil
                     PerfilDeUsuario nuevoPerfil = new PerfilDeUsuario
                     {
                         UsuarioId = userId,
@@ -328,7 +304,6 @@ namespace DameChanceSV2.Controllers
                 }
                 else
                 {
-                    // Actualizar perfil existente
                     perfilExistente.Edad = model.Edad;
                     perfilExistente.Genero = model.Genero;
                     perfilExistente.Intereses = model.Intereses;
@@ -340,12 +315,10 @@ namespace DameChanceSV2.Controllers
                     _perfilDeUsuarioDAL.UpdatePerfil(perfilExistente);
                 }
 
-                // Una vez completado el perfil, redirigir al Dashboard de usuario común
                 return RedirectToAction("Dashboard", "Home");
             }
 
             return View(model);
         }
-
     }
 }

@@ -1,0 +1,23 @@
+﻿@model DameChanceSV2.Models.Rol
+@{
+    ViewData["Title"] = "Agregar nuevo rol";
+}
+
+<div class="container mt-4">
+    <h2 class="mb-3">Agregar nuevo rol</h2>
+
+    <form asp-action="Create" method="post">
+        <div class="mb-3">
+            <label asp-for="Nombre" class="form-label">Nombre del Rol</label>
+            <input asp-for="Nombre" class="form-control" />
+            <span asp-validation-for="Nombre" class="text-danger"></span>
+        </div>
+
+        <button type="submit" class="btn btn-success">💾 Guardar</button>
+        <a asp-action="Index" class="btn btn-secondary ms-2">🔙 Volver</a>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

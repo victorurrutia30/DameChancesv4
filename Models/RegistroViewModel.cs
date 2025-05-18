@@ -12,12 +12,12 @@ namespace DameChanceSV2.Models
         [EmailAddress(ErrorMessage = "El correo no tiene un formato válido.")]
         public string Correo { get; set; }
 
-        [Required(ErrorMessage = "La contraseña es obligatoria.")]
-        [MinLength(6, ErrorMessage = "La contraseña debe tener al menos 6 caracteres.")]
+        [Required(ErrorMessage = "La contrasena es obligatoria.")]
+        [MinLength(6, ErrorMessage = "La contrasena debe tener al menos 6 caracteres.")]
         public string Contrasena { get; set; }
 
-        [Required(ErrorMessage = "La confirmación de contraseña es obligatoria.")]
-        [Compare("Contrasena", ErrorMessage = "Las contraseñas no coinciden.")]
+        [Required(ErrorMessage = "La confirmación de contrasena es obligatoria.")]
+        [Compare("Contrasena", ErrorMessage = "Las contrasenas no coinciden.")]
         public string ConfirmarContrasena { get; set; }
     }
 }

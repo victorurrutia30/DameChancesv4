@@ -6,9 +6,15 @@ namespace DameChanceSV2.DAL
 {
     public class BloqueoDAL
     {
+        // ==========================================
+        // CONSTRUCTOR CON INYECCIÓN DE CONEXIÓN
+        // ==========================================
         private readonly Database _database;
         public BloqueoDAL(Database database) => _database = database;
 
+        // ==========================================
+        // INSERTAR BLOQUEO EN LA TABLA Bloqueos
+        // ==========================================
         public void InsertBloqueo(int usuarioId, int bloqueadoId)
         {
             using var conn = _database.GetConnection();
@@ -20,6 +26,9 @@ namespace DameChanceSV2.DAL
             cmd.ExecuteNonQuery();
         }
 
+        // ==========================================
+        // VERIFICAR SI YA EXISTE UN BLOQUEO ENTRE DOS USUARIOS
+        // ==========================================
         public bool ExisteBloqueo(int usuarioId, int bloqueadoId)
         {
             using var conn = _database.GetConnection();
@@ -31,6 +40,9 @@ namespace DameChanceSV2.DAL
             return (int)cmd.ExecuteScalar() > 0;
         }
 
+        // ==========================================
+        // OBTENER LISTA DE USUARIOS BLOQUEADOS POR UN USUARIO
+        // ==========================================
         public List<int> GetUsuariosBloqueados(int usuarioId)
         {
             var list = new List<int>();
@@ -40,20 +52,28 @@ namespace DameChanceSV2.DAL
             cmd.Parameters.AddWithValue("@uid", usuarioId);
             conn.Open();
             using var reader = cmd.ExecuteReader();
-            while (reader.Read()) list.Add(reader.GetInt32(0));
+            while (reader.Read())
+                list.Add(reader.GetInt32(0)); // Agrega el ID bloqueado a la lista
             return list;
         }
 
+        // ==========================================
+        // OBTENER INFORMACIÓN COMPLETA DE UN USUARIO BLOQUEADO
+        // ==========================================
         public Usuario GetUsuarioBloqueadoConInfo(int id)
         {
             using var conn = _database.GetConnection();
-            const string sql = "SELECT Id, Nombre, Correo, Contrasena, Estado, RolId, FechaRegistro FROM Usuarios WHERE Id = @id";
+            const string sql = @"
+                SELECT Id, Nombre, Correo, Contrasena, Estado, RolId, FechaRegistro
+                FROM Usuarios
+                WHERE Id = @id";
             using var cmd = new SqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@id", id);
             conn.Open();
             using var reader = cmd.ExecuteReader();
             if (reader.Read())
             {
+                // Mapeo de datos a objeto Usuario
                 return new Usuario
                 {
                     Id = reader.GetInt32(0),
@@ -65,9 +85,12 @@ namespace DameChanceSV2.DAL
                     FechaRegistro = reader.GetDateTime(6)
                 };
             }
-            return null;
+            return null; // Si no encuentra el usuario
         }
 
+        // ==========================================
+        // ELIMINAR UN BLOQUEO ENTRE DOS USUARIOS
+        // ==========================================
         public void EliminarBloqueo(int usuarioId, int bloqueadoId)
         {
             using var conn = _database.GetConnection();
@@ -78,6 +101,5 @@ namespace DameChanceSV2.DAL
             conn.Open();
             cmd.ExecuteNonQuery();
         }
-
     }
 }

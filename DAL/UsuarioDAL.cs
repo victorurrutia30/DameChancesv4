@@ -1,12 +1,14 @@
 ﻿using System.Data.SqlClient;
 using DameChanceSV2.Models;
-using DameChanceSV2.Models;
 using Microsoft.Data.SqlClient;
 
 namespace DameChanceSV2.DAL
 {
     public class UsuarioDAL
     {
+        // ==========================================
+        // CONEXIÓN A BASE DE DATOS INYECTADA
+        // ==========================================
         private readonly Database _database;
 
         public UsuarioDAL(Database database)
@@ -14,16 +16,19 @@ namespace DameChanceSV2.DAL
             _database = database;
         }
 
-        // Inserta un nuevo usuario y retorna el Id insertado.
+        // ==========================================
+        // INSERTAR NUEVO USUARIO
+        // Devuelve el ID del nuevo usuario insertado
+        // ==========================================
         public int InsertUsuario(Usuario usuario)
         {
             int newId = 0;
             using (SqlConnection conn = _database.GetConnection())
             {
                 string query = @"
-            INSERT INTO Usuarios (Nombre, Correo, Contrasena, Estado, RolId)
-            OUTPUT INSERTED.Id
-            VALUES (@Nombre, @Correo, @Contrasena, @Estado, @RolId)";
+                    INSERT INTO Usuarios (Nombre, Correo, Contrasena, Estado, RolId)
+                    OUTPUT INSERTED.Id
+                    VALUES (@Nombre, @Correo, @Contrasena, @Estado, @RolId)";
 
                 using (SqlCommand cmd = new SqlCommand(query, conn))
                 {
@@ -40,14 +45,18 @@ namespace DameChanceSV2.DAL
             return newId;
         }
 
+        // ==========================================
+        // OBTENER USUARIO POR CORREO
+        // Usado para login y validaciones de registro
+        // ==========================================
         public Usuario GetUsuarioByCorreo(string correo)
         {
             Usuario usuario = null;
             using (SqlConnection conn = _database.GetConnection())
             {
                 string query = @"SELECT Id, Nombre, Correo, Contrasena, Estado, RolId, FechaRegistro
-                 FROM Usuarios
-                 WHERE Correo = @Correo";
+                                 FROM Usuarios
+                                 WHERE Correo = @Correo";
                 using (SqlCommand cmd = new SqlCommand(query, conn))
                 {
                     cmd.Parameters.AddWithValue("@Correo", correo);
@@ -73,7 +82,9 @@ namespace DameChanceSV2.DAL
             return usuario;
         }
 
-        // Retorna todos los usuarios para el listado (AdminDashboard)
+        // ==========================================
+        // OBTENER TODOS LOS USUARIOS (ADMIN DASHBOARD)
+        // ==========================================
         public List<Usuario> GetAllUsuarios()
         {
             List<Usuario> usuarios = new List<Usuario>();
@@ -88,7 +99,7 @@ namespace DameChanceSV2.DAL
                     {
                         while (reader.Read())
                         {
-                            Usuario u = new Usuario
+                            usuarios.Add(new Usuario
                             {
                                 Id = reader.GetInt32(0),
                                 Nombre = reader.GetString(1),
@@ -97,8 +108,7 @@ namespace DameChanceSV2.DAL
                                 Estado = reader.GetBoolean(4),
                                 RolId = reader.GetInt32(5),
                                 FechaRegistro = reader.GetDateTime(6)
-                            };
-                            usuarios.Add(u);
+                            });
                         }
                     }
                 }
@@ -106,6 +116,9 @@ namespace DameChanceSV2.DAL
             return usuarios;
         }
 
+        // ==========================================
+        // OBTENER USUARIO POR ID
+        // ==========================================
         public Usuario GetUsuarioById(int id)
         {
             Usuario usuario = null;
@@ -139,7 +152,10 @@ namespace DameChanceSV2.DAL
             return usuario;
         }
 
-        // Dentro de la clase UsuarioDAL en DameChance/DAL/UsuarioDAL.cs
+        // ==========================================
+        // ACTUALIZAR ESTADO DE VERIFICACIÓN
+        // Usado tras confirmar correo
+        // ==========================================
         public void UpdateEstado(int usuarioId, bool estado)
         {
             using (SqlConnection conn = _database.GetConnection())
@@ -155,6 +171,9 @@ namespace DameChanceSV2.DAL
             }
         }
 
+        // ==========================================
+        // ACTUALIZAR CONTRASEnA (RESET)
+        // ==========================================
         public void UpdateContrasena(int userId, string nuevaContrasenaHash)
         {
             using (SqlConnection conn = _database.GetConnection())
@@ -170,7 +189,10 @@ namespace DameChanceSV2.DAL
             }
         }
 
-        // Actualiza el usuario (Nombre, Correo, RolId, Estado) - para CRUD
+        // ==========================================
+        // ACTUALIZAR DATOS GENERALES DEL USUARIO (ADMIN)
+        // Incluye: nombre, correo, rol y estado
+        // ==========================================
         public void UpdateUsuario(Usuario user)
         {
             using (SqlConnection conn = _database.GetConnection())
@@ -194,7 +216,9 @@ namespace DameChanceSV2.DAL
             }
         }
 
-        // Elimina un usuario por su Id
+        // ==========================================
+        // ELIMINAR USUARIO POR SU ID
+        // ==========================================
         public void DeleteUsuario(int userId)
         {
             using var conn = _database.GetConnection();
@@ -205,7 +229,10 @@ namespace DameChanceSV2.DAL
             cmd.ExecuteNonQuery();
         }
 
-        // Obtiene contadores generales para el bloque 2
+        // ==========================================
+        // CONTADORES GENERALES PARA DASHBOARD ADMIN
+        // Total, verificados, no verificados y admins
+        // ==========================================
         public (int total, int verificados, int noVerificados, int admins) GetUserCounts()
         {
             int total = 0;
@@ -215,48 +242,37 @@ namespace DameChanceSV2.DAL
 
             using (SqlConnection conn = _database.GetConnection())
             {
-                // Puedes hacerlo en consultas separadas o en una sola. Aquí uso varias para mayor claridad:
                 conn.Open();
 
-                // Total
                 using (SqlCommand cmd = new SqlCommand("SELECT COUNT(*) FROM Usuarios", conn))
-                {
                     total = (int)cmd.ExecuteScalar();
-                }
 
-                // Verificados
                 using (SqlCommand cmd = new SqlCommand("SELECT COUNT(*) FROM Usuarios WHERE Estado = 1", conn))
-                {
                     verificados = (int)cmd.ExecuteScalar();
-                }
 
-                // No verificados
                 using (SqlCommand cmd = new SqlCommand("SELECT COUNT(*) FROM Usuarios WHERE Estado = 0", conn))
-                {
                     noVerificados = (int)cmd.ExecuteScalar();
-                }
 
-                // Admins (RolId = 1)
                 using (SqlCommand cmd = new SqlCommand("SELECT COUNT(*) FROM Usuarios WHERE RolId = 1", conn))
-                {
                     admins = (int)cmd.ExecuteScalar();
-                }
             }
 
             return (total, verificados, noVerificados, admins);
         }
 
-        // Para Bloque 3: Cuentas sin verificar hace más de 3 días
+        // ==========================================
+        // USUARIOS NO VERIFICADOS DESDE HACE MÁS DE 3 DÍAS
+        // ==========================================
         public int GetUnverifiedCountOlderThan3Days()
         {
             int count = 0;
             using (SqlConnection conn = _database.GetConnection())
             {
                 string query = @"
-                SELECT COUNT(*) 
-                FROM Usuarios
-                WHERE Estado = 0
-                  AND DATEDIFF(DAY, FechaRegistro, GETDATE()) > 3";
+                    SELECT COUNT(*) 
+                    FROM Usuarios
+                    WHERE Estado = 0
+                      AND DATEDIFF(DAY, FechaRegistro, GETDATE()) > 3";
                 using (SqlCommand cmd = new SqlCommand(query, conn))
                 {
                     conn.Open();
@@ -266,6 +282,10 @@ namespace DameChanceSV2.DAL
             return count;
         }
 
+        // ==========================================
+        // USUARIOS REGISTRADOS EN EL DÍA ACTUAL
+        // Se usa para métrica en Dashboard Admin
+        // ==========================================
         public int GetUsuariosRegistradosHoy()
         {
             using var conn = _database.GetConnection();
@@ -274,8 +294,5 @@ namespace DameChanceSV2.DAL
             conn.Open();
             return (int)cmd.ExecuteScalar();
         }
-
-
-
     }
 }

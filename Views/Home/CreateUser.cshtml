@@ -22,16 +22,22 @@
                 <input type="email" name="Correo" class="form-control input-custom" required />
             </div>
 
-            <!-- Contraseña -->
+            <!-- Contrasena -->
             <div class="form-group mb-3">
-                <label class="form-label"><i class="bi bi-key-fill me-1"></i>Contraseña</label>
+                <label class="form-label"><i class="bi bi-key-fill me-1"></i>Contrasena</label>
                 <input type="text" name="Contrasena" class="form-control input-custom" required />
             </div>
 
             <!-- Rol -->
             <div class="form-group mb-3">
-                <label class="form-label"><i class="bi bi-person-badge me-1"></i>Rol (1=Admin, 2=Usuario)</label>
-                <input type="number" name="RolId" class="form-control input-custom" value="2" min="1" required />
+                <label class="form-label"><i class="bi bi-person-badge me-1"></i>Rol</label>
+                <select name="RolId" class="form-select input-custom" required>
+                    <option value="">Seleccione un rol</option>
+                    @foreach (var rol in (SelectList)ViewBag.Roles)
+                    {
+                        <option value="@rol.Value">@rol.Text</option>
+                    }
+                </select>
             </div>
 
             <!-- Estado -->

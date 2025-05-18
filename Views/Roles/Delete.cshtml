@@ -1,0 +1,23 @@
+﻿@model DameChanceSV2.Models.Rol
+@{
+    ViewData["Title"] = "Eliminar rol";
+}
+
+<div class="container mt-4">
+    <h2 class="mb-3 text-danger">¿Estás seguro que deseas eliminar este rol?</h2>
+
+    <div class="mb-3">
+        <label class="form-label fw-bold">ID:</label>
+        <span>@Model.Id</span>
+    </div>
+    <div class="mb-3">
+        <label class="form-label fw-bold">Nombre del Rol:</label>
+        <span>@Model.Nombre</span>
+    </div>
+
+    <form asp-action="DeleteConfirmed" method="post">
+        <input type="hidden" asp-for="Id" />
+        <button type="submit" class="btn btn-danger">🗑️ Eliminar</button>
+        <a asp-action="Index" class="btn btn-secondary ms-2">🔙 Cancelar</a>
+    </form>
+</div>

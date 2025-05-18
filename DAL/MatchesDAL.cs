@@ -6,10 +6,16 @@ namespace DameChanceSV2.DAL
 {
     public class MatchesDAL
     {
+        // ==========================================
+        // DEPENDENCIA DE ACCESO A BASE DE DATOS
+        // ==========================================
         private readonly Database _database;
         public MatchesDAL(Database database) => _database = database;
 
-        // Inserta un like (un registro unilateral)
+        // ==========================================
+        // INSERTAR UN LIKE (interés de un usuario hacia otro)
+        // INSERTA un registro unilateral en la tabla Matches
+        // ==========================================
         public void InsertLike(int usuarioId, int targetId)
         {
             using var conn = _database.GetConnection();
@@ -23,7 +29,10 @@ namespace DameChanceSV2.DAL
             cmd.ExecuteNonQuery();
         }
 
-        // ¿Existe el like inverso?
+        // ==========================================
+        // VERIFICAR SI EL LIKE ES RECÍPROCO
+        // Es decir, si el usuario objetivo también dio like
+        // ==========================================
         public bool IsReciprocal(int usuarioId, int targetId)
         {
             using var conn = _database.GetConnection();
@@ -38,7 +47,9 @@ namespace DameChanceSV2.DAL
             return (int)cmd.ExecuteScalar() > 0;
         }
 
-        // Si el like ya existe
+        // ==========================================
+        // VERIFICAR SI YA EXISTE UN LIKE DE USUARIO A OTRO
+        // ==========================================
         public bool ExistsLike(int usuarioId, int targetId)
         {
             using var conn = _database.GetConnection();
@@ -53,24 +64,27 @@ namespace DameChanceSV2.DAL
             return (int)cmd.ExecuteScalar() > 0;
         }
 
-        // Recupera usuarios con likes mutuos
+        // ==========================================
+        // OBTENER USUARIOS QUE TIENEN LIKE MUTUO CON EL USUARIO ACTUAL
+        // EXCLUYE USUARIOS BLOQUEADOS Y QUE LO BLOQUEARON
+        // ==========================================
         public List<Usuario> GetMatchesForUser(int usuarioId)
         {
             var list = new List<Usuario>();
             using var conn = _database.GetConnection();
             const string sql = @"
                 SELECT u.Id, u.Nombre, u.Correo, u.Contrasena, u.Estado, u.RolId, u.FechaRegistro
-    FROM Usuarios u
-    INNER JOIN Matches m1 
-        ON m1.Usuario2Id = u.Id AND m1.Usuario1Id = @uid
-    INNER JOIN Matches m2 
-        ON m2.Usuario1Id = u.Id AND m2.Usuario2Id = @uid
-    WHERE u.Id NOT IN (
-        SELECT UsuarioBloqueadoId FROM Bloqueos WHERE UsuarioId = @uid
-    )
-    AND u.Id NOT IN (
-        SELECT UsuarioId FROM Bloqueos WHERE UsuarioBloqueadoId = @uid
-    )";
+                FROM Usuarios u
+                INNER JOIN Matches m1 
+                    ON m1.Usuario2Id = u.Id AND m1.Usuario1Id = @uid
+                INNER JOIN Matches m2 
+                    ON m2.Usuario1Id = u.Id AND m2.Usuario2Id = @uid
+                WHERE u.Id NOT IN (
+                    SELECT UsuarioBloqueadoId FROM Bloqueos WHERE UsuarioId = @uid
+                )
+                AND u.Id NOT IN (
+                    SELECT UsuarioId FROM Bloqueos WHERE UsuarioBloqueadoId = @uid
+                )";
             using var cmd = new SqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@uid", usuarioId);
             conn.Open();
@@ -91,7 +105,9 @@ namespace DameChanceSV2.DAL
             return list;
         }
 
-        // Permite cargar un objeto Match por su Id.
+        // ==========================================
+        // OBTENER UN OBJETO MATCH COMPLETO POR SU ID
+        // ==========================================
         public Match? GetMatchById(int matchId)
         {
             using var conn = _database.GetConnection();
@@ -116,15 +132,17 @@ namespace DameChanceSV2.DAL
             return null;
         }
 
-        //Devuelve el Id del registro de match (usuario1 → usuario2).
-
+        // ==========================================
+        // OBTENER EL ID DE UN LIKE (no recíproco necesariamente)
+        // Se usa por ejemplo para navegación de mensajes
+        // ==========================================
         public int GetMatchId(int usuario1Id, int usuario2Id)
         {
             using var conn = _database.GetConnection();
             const string sql = @"
-        SELECT TOP 1 Id
-        FROM Matches
-        WHERE Usuario1Id = @u1 AND Usuario2Id = @u2";
+                SELECT TOP 1 Id
+                FROM Matches
+                WHERE Usuario1Id = @u1 AND Usuario2Id = @u2";
             using var cmd = new SqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@u1", usuario1Id);
             cmd.Parameters.AddWithValue("@u2", usuario2Id);
@@ -133,16 +151,20 @@ namespace DameChanceSV2.DAL
             return result != null ? (int)result : 0;
         }
 
-        // devolver el match ID
+        // ==========================================
+        // OBTENER EL ID DEL MATCH CONVERSACIONAL ENTRE DOS USUARIOS
+        // No importa quién fue el primero en dar like
+        // Se ordena por fecha para tomar el más antiguo
+        // ==========================================
         public int GetConversationMatchId(int userA, int userB)
         {
             using var conn = _database.GetConnection();
             const string sql = @"
-        SELECT TOP 1 Id
-        FROM Matches
-        WHERE (Usuario1Id = @u1 AND Usuario2Id = @u2)
-           OR (Usuario1Id = @u2 AND Usuario2Id = @u1)
-        ORDER BY FechaMatch";  // coge el primero (el más antiguo)
+                SELECT TOP 1 Id
+                FROM Matches
+                WHERE (Usuario1Id = @u1 AND Usuario2Id = @u2)
+                   OR (Usuario1Id = @u2 AND Usuario2Id = @u1)
+                ORDER BY FechaMatch";  // Prioriza el primer match cronológicamente
             using var cmd = new SqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@u1", userA);
             cmd.Parameters.AddWithValue("@u2", userB);
@@ -150,6 +172,5 @@ namespace DameChanceSV2.DAL
             var result = cmd.ExecuteScalar();
             return result != null ? (int)result : 0;
         }
-
     }
 }

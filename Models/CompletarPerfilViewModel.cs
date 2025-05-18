@@ -7,7 +7,7 @@ namespace DameChanceSV2.Models
     public class CompletarPerfilViewModel
     {
         [Required(ErrorMessage = "La edad es obligatoria.")]
-        [Range(18, 120, ErrorMessage = "La edad mínima es 18 años.")]
+        [Range(18, 120, ErrorMessage = "La edad mínima es 18 anos.")]
         public int Edad { get; set; }
 
         [Required(ErrorMessage = "El género es obligatorio.")]

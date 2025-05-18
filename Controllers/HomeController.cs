@@ -5,32 +5,46 @@ using DameChanceSV2.DAL;
 using DameChanceSV2.Utilities;
 using System.Linq;
 using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace DameChanceSV2.Controllers
 {
     public class HomeController : Controller
     {
+        // ==========================================
+        // DEPENDENCIAS INYECTADAS A TRAVÉS DEL CONSTRUCTOR
+        // Incluye acceso a usuarios, perfiles, matches, mensajes, reportes y roles.
+        // ==========================================
         private readonly ILogger<HomeController> _logger;
         private readonly UsuarioDAL _usuarioDAL;
         private readonly PerfilDeUsuarioDAL _perfilDal;
-        private readonly MatchesDAL _matchesDAL;      
+        private readonly MatchesDAL _matchesDAL;
         private readonly MensajeDAL _mensajeDal;
         private readonly ReporteDAL _reporteDAL;
+        private readonly RolDAL _rolDAL;
 
-        public HomeController(ILogger<HomeController> logger,
-                      UsuarioDAL usuarioDAL,
-                      PerfilDeUsuarioDAL perfilDal,
-                      MatchesDAL matchesDAL,
-                      MensajeDAL mensajeDAL,
-                      ReporteDAL reporteDAL) // nuevo
+        public HomeController(
+            ILogger<HomeController> logger,
+            UsuarioDAL usuarioDAL,
+            PerfilDeUsuarioDAL perfilDal,
+            MatchesDAL matchesDAL,
+            MensajeDAL mensajeDAL,
+            ReporteDAL reporteDAL,
+            RolDAL rolDAL
+        )
         {
             _logger = logger;
             _usuarioDAL = usuarioDAL;
             _perfilDal = perfilDal;
             _matchesDAL = matchesDAL;
             _mensajeDal = mensajeDAL;
-            _reporteDAL = reporteDAL; // nuevo
+            _reporteDAL = reporteDAL;
+            _rolDAL = rolDAL;
         }
+
+        // ==========================================
+        // VISTAS GENERALES (Inicio, Privacidad, Error)
+        // ==========================================
 
         public IActionResult Index()
         {
@@ -48,41 +62,49 @@ namespace DameChanceSV2.Controllers
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
 
-        // =====================================
-        // ADMIN DASHBOARD
-        // =====================================
+        // ==========================================
+        // VISTA DASHBOARD DE ADMINISTRADOR
+        // ==========================================
+
         [HttpGet]
         public IActionResult AdminDashboard()
         {
             if (!EsAdmin()) return NotFound();
 
+            // Obtener métricas para el dashboard
             var (total, verificados, noVerificados, admins) = _usuarioDAL.GetUserCounts();
             var listaUsuarios = _usuarioDAL.GetAllUsuarios();
             int sinVerificarMas3Dias = _usuarioDAL.GetUnverifiedCountOlderThan3Days();
             int registradosHoy = _usuarioDAL.GetUsuariosRegistradosHoy();
             int totalReportes = _reporteDAL.GetTotalReportes();
 
+            // Asignar datos a ViewBag
             ViewBag.RegistradosHoy = registradosHoy;
             ViewBag.Total = total;
             ViewBag.Verificados = verificados;
             ViewBag.NoVerificados = noVerificados;
             ViewBag.Admins = admins;
             ViewBag.SinVerificarMas3Dias = sinVerificarMas3Dias;
-            ViewBag.TotalReportes = totalReportes; // NUEVO
+            ViewBag.TotalReportes = totalReportes;
 
             return View("AdminDashboard", listaUsuarios);
         }
 
+        // ==========================================
+        // CREAR USUARIO DESDE EL PANEL DE ADMIN
+        // ==========================================
 
-        // GET: /Home/CreateUser
         [HttpGet]
         public IActionResult CreateUser()
         {
             if (!EsAdmin()) return NotFound();
+
+            var roles = _rolDAL.GetRoles();
+            ViewBag.Roles = new SelectList(roles, "Id", "Nombre");
+
             return View();
         }
 
-        // POST: /Home/CreateUser
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult CreateUser(Usuario model)
@@ -99,22 +121,24 @@ namespace DameChanceSV2.Controllers
             return View(model);
         }
 
-        // GET: /Home/EditUser/
+        // ==========================================
+        // EDITAR USUARIO DESDE EL PANEL DE ADMIN
+        // ==========================================
+
         [HttpGet]
         public IActionResult EditUser(int id)
         {
             if (!EsAdmin()) return NotFound();
 
             var usuario = _usuarioDAL.GetUsuarioById(id);
-            if (usuario == null)
-            {
-                return NotFound();
-            }
+            if (usuario == null) return NotFound();
+
+            var roles = _rolDAL.GetRoles();
+            ViewBag.Roles = new SelectList(roles, "Id", "Nombre", usuario.RolId);
 
             return View(usuario);
         }
 
-        // POST: /Home/EditUser
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult EditUser(Usuario model)
@@ -123,7 +147,7 @@ namespace DameChanceSV2.Controllers
 
             if (ModelState.IsValid)
             {
-                // Recuperar la contraseña original del usuario
+                // Preserva la contrasena existente si no se modifica
                 var usuarioOriginal = _usuarioDAL.GetUsuarioById(model.Id);
                 if (usuarioOriginal != null)
                 {
@@ -134,28 +158,28 @@ namespace DameChanceSV2.Controllers
                 return RedirectToAction("AdminDashboard");
             }
 
+            // Manejo de errores si falla el modelo
             var allErrors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
             ViewBag.Errors = allErrors;
 
             return View(model);
         }
 
-        // GET: /Home/DeleteUser/
+        // ==========================================
+        // ELIMINAR USUARIO DESDE EL PANEL DE ADMIN
+        // ==========================================
+
         [HttpGet]
         public IActionResult DeleteUser(int id)
         {
             if (!EsAdmin()) return NotFound();
 
             var usuario = _usuarioDAL.GetUsuarioById(id);
-            if (usuario == null)
-            {
-                return NotFound();
-            }
+            if (usuario == null) return NotFound();
 
             return View(usuario);
         }
 
-        // POST: /Home/DeleteUserConfirmed
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult DeleteUserConfirmed(int id)
@@ -166,43 +190,29 @@ namespace DameChanceSV2.Controllers
             return RedirectToAction("AdminDashboard");
         }
 
-        // =====================================
-        // MÉTODO PRIVADO DE CHEQUEO DE ADMIN
-        // =====================================
-        private bool EsAdmin()
-        {
-            var userSession = Request.Cookies["UserSession"];
-            if (string.IsNullOrEmpty(userSession)) return false;
-
-            if (!int.TryParse(userSession, out int userId)) return false;
-
-            var user = _usuarioDAL.GetUsuarioById(userId);
-            if (user == null) return false;
-
-            return (user.RolId == 1); // Rol 1 = Admin
-        }
+        // ==========================================
+        // DASHBOARD DEL USUARIO REGULAR
+        // ==========================================
 
         [HttpGet]
         public IActionResult Dashboard()
         {
-            // Validar sesión
+            // Verificar sesión activa
             if (!int.TryParse(Request.Cookies["UserSession"], out int userId))
                 return RedirectToAction("Login", "Account");
 
-            // Perfil usuario actual
+            // Obtener perfil del usuario
             var perfilUsuario = _perfilDal.GetPerfilByUsuarioId(userId);
-
-            // Determinar ruta de imagen
             string profileImg = string.IsNullOrEmpty(perfilUsuario?.ImagenPerfil)
                 ? "images/perfiles/placeholder.png"
                 : perfilUsuario.ImagenPerfil;
             ViewBag.UserProfileImage = profileImg;
 
-            
+            // Perfiles de otros usuarios
             var perfiles = _perfilDal.GetAllOtherProfiles(userId);
 
+            // Datos del usuario actual
             var usuario = _usuarioDAL.GetUsuarioById(userId);
-
             var mutuals = _matchesDAL.GetMatchesForUser(userId);
             int matchCount = mutuals.Count;
             int newMsgs = mutuals
@@ -213,11 +223,23 @@ namespace DameChanceSV2.Controllers
             ViewBag.MatchCount = matchCount;
             ViewBag.NewMsgs = newMsgs;
 
-            return View(perfiles); ViewBag.UserName = usuario?.Nombre ?? "Usuario";
-            ViewBag.MatchCount = matchCount;
-            ViewBag.NewMsgs = newMsgs;
-
             return View(perfiles);
+        }
+
+        // ==========================================
+        // FUNCIÓN PRIVADA PARA VALIDAR SI ES ADMIN
+        // ==========================================
+        private bool EsAdmin()
+        {
+            var userSession = Request.Cookies["UserSession"];
+            if (string.IsNullOrEmpty(userSession)) return false;
+
+            if (!int.TryParse(userSession, out int userId)) return false;
+
+            var user = _usuarioDAL.GetUsuarioById(userId);
+            if (user == null) return false;
+
+            return (user.RolId == 1); // RolId 1 = Admin
         }
     }
 }

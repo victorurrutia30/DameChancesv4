@@ -9,28 +9,35 @@ namespace DameChanceSV2.Controllers
 {
     public class MatchesController : Controller
     {
+        // ==========================================
+        // DEPENDENCIAS INYECTADAS
+        // ==========================================
         private readonly MatchesDAL _matchesDAL;
-        private readonly PerfilDeUsuarioDAL _perfilDeUsuarioDAL; 
+        private readonly PerfilDeUsuarioDAL _perfilDeUsuarioDAL;
+
         public MatchesController(
-    MatchesDAL matchesDAL,
-    PerfilDeUsuarioDAL perfilDeUsuarioDAL)    
+            MatchesDAL matchesDAL,
+            PerfilDeUsuarioDAL perfilDeUsuarioDAL)
         {
             _matchesDAL = matchesDAL;
-            _perfilDeUsuarioDAL = perfilDeUsuarioDAL; 
+            _perfilDeUsuarioDAL = perfilDeUsuarioDAL;
         }
 
+        // ==========================================
+        // LISTADO DE MATCHES DEL USUARIO ACTUAL
         // GET: /Matches
+        // ==========================================
         [HttpGet]
         public IActionResult Index()
         {
-            // Leer ID de usuario de la cookie
+            // Validar si hay sesión activa (usuario logueado)
             if (!int.TryParse(Request.Cookies["UserSession"], out int userId))
                 return RedirectToAction("Login", "Account");
 
-            
+            // Obtener usuarios con los que ha hecho match
             var usuarios = _matchesDAL.GetMatchesForUser(userId);
 
-            // Mapear user.Id → matchId para el chat
+            // Crear diccionario userId → matchId para enlazar con el chat
             var matchMap = new Dictionary<int, int>();
             foreach (var u in usuarios)
             {
@@ -38,8 +45,9 @@ namespace DameChanceSV2.Controllers
             }
             ViewBag.MatchMap = matchMap;
 
-            //  Convertir a DashboardProfileViewModel para tener foto e intereses
-            var model = usuarios.Select(u => {
+            // Construir modelo con datos de perfil para cada match
+            var model = usuarios.Select(u =>
+            {
                 var perfil = _perfilDeUsuarioDAL.GetPerfilByUsuarioId(u.Id);
                 return new DashboardProfileViewModel
                 {
@@ -56,17 +64,24 @@ namespace DameChanceSV2.Controllers
             return View(model);
         }
 
+        // ==========================================
+        // ACCIÓN PARA DAR "LIKE" A OTRO USUARIO
         // POST: /Matches/Like
+        // ==========================================
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Like(int targetId)
         {
+            // Validar si hay sesión activa (usuario logueado)
             if (!int.TryParse(Request.Cookies["UserSession"], out int userId))
                 return RedirectToAction("Login", "Account");
 
+            // Si no ha dado like antes, registrar el like
             if (!_matchesDAL.ExistsLike(userId, targetId))
             {
                 _matchesDAL.InsertLike(userId, targetId);
+
+                // Verificar si el like es recíproco (match)
                 if (_matchesDAL.IsReciprocal(userId, targetId))
                     TempData["MatchMsg"] = "¡Tienes un nuevo match!";
                 else

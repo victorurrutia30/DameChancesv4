@@ -7,10 +7,15 @@ namespace DameChanceSV2.DAL
 {
     public class ReporteDAL
     {
+        // ==========================================
+        // CONEXIÓN A LA BASE DE DATOS (INYECTADA)
+        // ==========================================
         private readonly Database _database;
         public ReporteDAL(Database database) => _database = database;
 
-        // Guarda un nuevo reporte
+        // ==========================================
+        // INSERTAR NUEVO REPORTE EN LA BASE DE DATOS
+        // ==========================================
         public void InsertReporte(Reporte reporte)
         {
             using var conn = _database.GetConnection();
@@ -25,15 +30,18 @@ namespace DameChanceSV2.DAL
             cmd.ExecuteNonQuery();
         }
 
-        // Obtiene todos los reportes ordenados por fecha
+        // ==========================================
+        // OBTENER TODOS LOS REPORTES (ADMINISTRADOR)
+        // ORDENADOS POR FECHA DESCENDENTE
+        // ==========================================
         public List<Reporte> GetAllReportes()
         {
             var list = new List<Reporte>();
             using var conn = _database.GetConnection();
             const string sql = @"
-    SELECT Id, IdReportante, IdReportado, Motivo, FechaReporte, Resuelto, MensajeResolucion
-    FROM Reportes
-    ORDER BY FechaReporte DESC";
+                SELECT Id, IdReportante, IdReportado, Motivo, FechaReporte, Resuelto, MensajeResolucion
+                FROM Reportes
+                ORDER BY FechaReporte DESC";
             using var cmd = new SqlCommand(sql, conn);
             conn.Open();
             using var reader = cmd.ExecuteReader();
@@ -53,7 +61,9 @@ namespace DameChanceSV2.DAL
             return list;
         }
 
-        // Marca un reporte como resuelto
+        // ==========================================
+        // MARCAR REPORTE COMO RESUELTO (SIN MENSAJE)
+        // ==========================================
         public void UpdateResuelto(int id, bool resuelto)
         {
             using var conn = _database.GetConnection();
@@ -65,14 +75,18 @@ namespace DameChanceSV2.DAL
             cmd.ExecuteNonQuery();
         }
 
+        // ==========================================
+        // MARCAR REPORTE COMO RESUELTO CON MENSAJE
+        // Guarda mensaje adicional para justificación o detalle
+        // ==========================================
         public void MarcarComoResueltoConMensaje(int id, string mensaje)
         {
             using var conn = _database.GetConnection();
             const string sql = @"
-        UPDATE Reportes
-        SET Resuelto = 1,
-            MensajeResolucion = @mensaje
-        WHERE Id = @id";
+                UPDATE Reportes
+                SET Resuelto = 1,
+                    MensajeResolucion = @mensaje
+                WHERE Id = @id";
             using var cmd = new SqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@mensaje", mensaje);
             cmd.Parameters.AddWithValue("@id", id);
@@ -80,6 +94,10 @@ namespace DameChanceSV2.DAL
             cmd.ExecuteNonQuery();
         }
 
+        // ==========================================
+        // OBTENER TOTAL DE REPORTES NO RESUELTOS
+        // Se usa en panel administrativo
+        // ==========================================
         public int GetTotalReportes()
         {
             using var conn = _database.GetConnection();
@@ -89,15 +107,19 @@ namespace DameChanceSV2.DAL
             return (int)cmd.ExecuteScalar();
         }
 
+        // ==========================================
+        // OBTENER REPORTES HECHOS POR UN USUARIO
+        // Usado para vista MisReportes
+        // ==========================================
         public List<Reporte> GetReportesPorUsuario(int usuarioId)
         {
             var list = new List<Reporte>();
             using var conn = _database.GetConnection();
             const string sql = @"
-        SELECT Id, IdReportante, IdReportado, Motivo, FechaReporte, Resuelto, MensajeResolucion
-        FROM Reportes
-        WHERE IdReportante = @uid
-        ORDER BY FechaReporte DESC";
+                SELECT Id, IdReportante, IdReportado, Motivo, FechaReporte, Resuelto, MensajeResolucion
+                FROM Reportes
+                WHERE IdReportante = @uid
+                ORDER BY FechaReporte DESC";
             using var cmd = new SqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@uid", usuarioId);
             conn.Open();
@@ -117,6 +139,5 @@ namespace DameChanceSV2.DAL
             }
             return list;
         }
-
     }
 }

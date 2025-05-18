@@ -1,4 +1,8 @@
-﻿using System;
+﻿// ==========================================
+// IMPORTACIONES
+// ==========================================
+
+using System;
 using System.Data.SqlClient;
 using Microsoft.Data.SqlClient;
 using DameChanceSV2.Models;
@@ -7,6 +11,9 @@ namespace DameChanceSV2.DAL
 {
     public class PerfilDeUsuarioDAL
     {
+        // ==========================================
+        // DEPENDENCIA DE CONEXIÓN A BASE DE DATOS
+        // ==========================================
         private readonly Database _database;
 
         public PerfilDeUsuarioDAL(Database database)
@@ -14,7 +21,10 @@ namespace DameChanceSV2.DAL
             _database = database;
         }
 
-        // Inserta un nuevo perfil y retorna el Id insertado.
+        // ==========================================
+        // INSERTAR NUEVO PERFIL DE USUARIO
+        // Devuelve el Id insertado gracias a OUTPUT INSERTED.Id
+        // ==========================================
         public int InsertPerfil(PerfilDeUsuario perfil)
         {
             int newId = 0;
@@ -33,21 +43,24 @@ namespace DameChanceSV2.DAL
                     cmd.Parameters.AddWithValue("@ImagenPerfil", perfil.ImagenPerfil ?? (object)DBNull.Value);
 
                     conn.Open();
-                    newId = (int)cmd.ExecuteScalar();
+                    newId = (int)cmd.ExecuteScalar(); // Devuelve el Id generado
                 }
             }
             return newId;
         }
 
-        // Retorna el perfil de un usuario, o null si no existe
+        // ==========================================
+        // OBTENER PERFIL POR ID DE USUARIO
+        // Devuelve el perfil completo o null si no existe
+        // ==========================================
         public PerfilDeUsuario GetPerfilByUsuarioId(int userId)
         {
             PerfilDeUsuario perfil = null;
             using (SqlConnection conn = _database.GetConnection())
             {
                 string query = @"SELECT Id, UsuarioId, Edad, Genero, Intereses, Ubicacion, ImagenPerfil
-                         FROM PerfilesDeUsuario
-                         WHERE UsuarioId = @UserId";
+                                 FROM PerfilesDeUsuario
+                                 WHERE UsuarioId = @UserId";
                 using (SqlCommand cmd = new SqlCommand(query, conn))
                 {
                     cmd.Parameters.AddWithValue("@UserId", userId);
@@ -73,18 +86,21 @@ namespace DameChanceSV2.DAL
             return perfil;
         }
 
-        // Actualiza un perfil existente
+        // ==========================================
+        // ACTUALIZAR PERFIL EXISTENTE
+        // Actualiza los campos configurables por el usuario
+        // ==========================================
         public void UpdatePerfil(PerfilDeUsuario perfil)
         {
             using (SqlConnection conn = _database.GetConnection())
             {
                 string query = @"UPDATE PerfilesDeUsuario
-                         SET Edad = @Edad,
-                             Genero = @Genero,
-                             Intereses = @Intereses,
-                             Ubicacion = @Ubicacion,
-                             ImagenPerfil = @ImagenPerfil
-                         WHERE Id = @Id";
+                                 SET Edad = @Edad,
+                                     Genero = @Genero,
+                                     Intereses = @Intereses,
+                                     Ubicacion = @Ubicacion,
+                                     ImagenPerfil = @ImagenPerfil
+                                 WHERE Id = @Id";
                 using (SqlCommand cmd = new SqlCommand(query, conn))
                 {
                     cmd.Parameters.AddWithValue("@Edad", perfil.Edad);
@@ -100,24 +116,25 @@ namespace DameChanceSV2.DAL
             }
         }
 
-
-        //Extender el DAL para obtener todos los perfiles (menos el mio)
-
+        // ==========================================
+        // OBTENER TODOS LOS PERFILES (EXCEPTO EL MÍO)
+        // Solo muestra usuarios verificados y no bloqueados
+        // ==========================================
         public List<DashboardProfileViewModel> GetAllOtherProfiles(int currentUserId)
         {
             var list = new List<DashboardProfileViewModel>();
             using var conn = _database.GetConnection();
             const string sql = @"
-        SELECT p.UsuarioId, u.Nombre, p.Edad, p.Genero, p.Intereses, p.Ubicacion, p.ImagenPerfil
-        FROM PerfilesDeUsuario p
-        INNER JOIN Usuarios u ON u.Id = p.UsuarioId
-        WHERE p.UsuarioId <> @me AND u.Estado = 1
-        AND p.UsuarioId NOT IN (
-            SELECT UsuarioBloqueadoId FROM Bloqueos WHERE UsuarioId = @me
-        )
-        AND p.UsuarioId NOT IN (
-            SELECT UsuarioId FROM Bloqueos WHERE UsuarioBloqueadoId = @me
-        )"; // sólo verificados
+                SELECT p.UsuarioId, u.Nombre, p.Edad, p.Genero, p.Intereses, p.Ubicacion, p.ImagenPerfil
+                FROM PerfilesDeUsuario p
+                INNER JOIN Usuarios u ON u.Id = p.UsuarioId
+                WHERE p.UsuarioId <> @me AND u.Estado = 1
+                AND p.UsuarioId NOT IN (
+                    SELECT UsuarioBloqueadoId FROM Bloqueos WHERE UsuarioId = @me
+                )
+                AND p.UsuarioId NOT IN (
+                    SELECT UsuarioId FROM Bloqueos WHERE UsuarioBloqueadoId = @me
+                )";
             using var cmd = new SqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("@me", currentUserId);
             conn.Open();
@@ -137,7 +154,5 @@ namespace DameChanceSV2.DAL
             }
             return list;
         }
-
-
     }
 }
